@@ -1,4 +1,7 @@
 package co.edu.uniquindio.gestionalojamiento.enums;
 
-public class TemporadaTipo {
+public enum TemporadaTipo {
+    BAJA,
+    MEDIA,
+    ALTA
 }

@@ -1,4 +1,11 @@
+
 package co.edu.uniquindio.gestionalojamiento.enums;
 
-public class EstadoReserva {
+public enum EstadoReserva {
+    PENDIENTE,
+    CONFIRMADA,
+    EN_CURSO,
+    FINALIZADA,
+    CANCELADA,
+    NO_SHOW
 }

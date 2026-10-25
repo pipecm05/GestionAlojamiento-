@@ -1,4 +1,7 @@
 package co.edu.uniquindio.gestionalojamiento.enums;
 
-public class CanalReserva {
+public enum CanalReserva {
+    PORTAL,
+    DIRECTA,
+    EXTERNA
 }
