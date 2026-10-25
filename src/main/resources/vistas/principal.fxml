@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="1000"
+            prefHeight="650">
+
+    <left>
+        <VBox spacing="15" prefWidth="220"
+              style="-fx-background-color: #243447;">
+            <padding>
+                <Insets top="25" right="15" bottom="20" left="15"/>
+            </padding>
+
+            <Label text="GESTIÓN DE ALOJAMIENTOS"
+                   wrapText="true"
+                   style="-fx-text-fill: white; -fx-font-size: 18px; -fx-font-weight: bold;"/>
+
+            <Button text="Inicio" maxWidth="Infinity"/>
+            <Button text="Alojamientos" maxWidth="Infinity"/>
+            <Button text="Huéspedes" maxWidth="Infinity"/>
+            <Button text="Reservas" maxWidth="Infinity"/>
+            <Button text="Preparación" maxWidth="Infinity"/>
+            <Button text="Reportes" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+
+    <center>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="35" right="35" bottom="35" left="35"/>
+            </padding>
+
+            <Label text="Panel principal"
+                   style="-fx-font-size: 28px; -fx-font-weight: bold;"/>
+
+            <Label text="Sistema de gestión de alojamiento"
+                   style="-fx-font-size: 16px;"/>
+
+            <Label text="Bienvenido. Selecciona una opción del menú para comenzar."
+                   wrapText="true"/>
+        </VBox>
+    </center>
+
+</BorderPane>
