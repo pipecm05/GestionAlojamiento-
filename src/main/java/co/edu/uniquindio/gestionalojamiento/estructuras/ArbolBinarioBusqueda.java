@@ -1,6 +1,9 @@
 package co.edu.uniquindio.gestionalojamiento.estructuras;
+import java.util.Iterator;
+import java.util.Comparator;
 
-public class ArbolBinarioBusqueda<T extends Comparable<T>> {
+public class ArbolBinarioBusqueda<T extends Comparable<T>>
+        implements Iterable<T> {
 
     private NodoArbol<T> raiz;
     private int tamanio;
@@ -229,5 +232,64 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>> {
         postordenRecursivo(actual.getDerecho(), resultado);
         resultado.agregar(actual.getDato());
     }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new IteradorArbol<>(inorden());
+    }
+
+
+    public <K> T buscarPorClave(
+            K clave,
+            Comparator<? super K> comparadorClaves,
+            java.util.function.Function<? super T, ? extends K> obtenerClave) {
+
+        if (clave == null || comparadorClaves == null
+                || obtenerClave == null) {
+            throw new IllegalArgumentException(
+                    "La clave y los criterios de búsqueda son obligatorios."
+            );
+        }
+
+        return buscarPorClaveRecursivo(
+                raiz, clave, comparadorClaves, obtenerClave
+        );
+    }
+
+    private <K> T buscarPorClaveRecursivo(
+            NodoArbol<T> actual,
+            K clave,
+            Comparator<? super K> comparadorClaves,
+            java.util.function.Function<? super T, ? extends K> obtenerClave) {
+
+        if (actual == null) {
+            return null;
+        }
+
+        int comparacion = comparadorClaves.compare(
+                clave, obtenerClave.apply(actual.getDato())
+        );
+
+        if (comparacion == 0) {
+            return actual.getDato();
+        }
+
+        if (comparacion < 0) {
+            return buscarPorClaveRecursivo(
+                    actual.getIzquierdo(),
+                    clave,
+                    comparadorClaves,
+                    obtenerClave
+            );
+        }
+
+        return buscarPorClaveRecursivo(
+                actual.getDerecho(),
+                clave,
+                comparadorClaves,
+                obtenerClave
+        );
+    }
+
 
 }
