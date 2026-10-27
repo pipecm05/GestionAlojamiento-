@@ -40,5 +40,25 @@ public class PruebaArbol {
         System.out.println("Buscar 50: " + prueba.buscar(50));
         System.out.println("Buscar 60: " + prueba.buscar(60));
 
+
+        System.out.println("\n--- PRUEBAS DE ALTURA ---");
+
+        ArbolBinarioBusqueda<Integer> arbolAltura =
+                new ArbolBinarioBusqueda<>();
+
+        System.out.println("Árbol vacío: " + arbolAltura.altura());
+
+        arbolAltura.insertar(50);
+        System.out.println("Solo raíz: " + arbolAltura.altura());
+
+        arbolAltura.insertar(30);
+        arbolAltura.insertar(70);
+        System.out.println("Tres nodos: " + arbolAltura.altura());
+
+        arbolAltura.insertar(20);
+        arbolAltura.insertar(10);
+        System.out.println("Rama más profunda: " + arbolAltura.altura());
+
+
     }
 }

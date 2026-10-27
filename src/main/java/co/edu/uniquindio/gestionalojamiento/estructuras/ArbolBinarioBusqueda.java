@@ -156,4 +156,23 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>> {
         return encontrarMinimo(actual.getIzquierdo());
     }
 
+
+    public int altura() {
+        return alturaRecursiva(raiz);
+    }
+
+    private int alturaRecursiva(NodoArbol<T> actual) {
+        if (actual == null) {
+            return -1;
+        }
+
+        int alturaIzquierda =
+                alturaRecursiva(actual.getIzquierdo());
+
+        int alturaDerecha =
+                alturaRecursiva(actual.getDerecho());
+
+        return 1 + Math.max(alturaIzquierda, alturaDerecha);
+    }
+
 }
