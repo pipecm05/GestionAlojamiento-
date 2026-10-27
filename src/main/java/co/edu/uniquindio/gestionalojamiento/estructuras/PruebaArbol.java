@@ -60,5 +60,33 @@ public class PruebaArbol {
         System.out.println("Rama más profunda: " + arbolAltura.altura());
 
 
+
+        System.out.println("\n--- PRUEBAS DE RECORRIDOS ---");
+
+        ArbolBinarioBusqueda<Integer> arbolRecorridos =
+                new ArbolBinarioBusqueda<>();
+
+        arbolRecorridos.insertar(50);
+        arbolRecorridos.insertar(30);
+        arbolRecorridos.insertar(70);
+        arbolRecorridos.insertar(20);
+        arbolRecorridos.insertar(40);
+        arbolRecorridos.insertar(60);
+        arbolRecorridos.insertar(80);
+
+        System.out.println("INORDEN:");
+        for (Integer numero : arbolRecorridos.inorden()) {
+            System.out.print(numero + " ");
+        }
+
+        System.out.println("\nPREORDEN:");
+        for (Integer numero : arbolRecorridos.preorden()) {
+            System.out.print(numero + " ");
+        }
+
+        System.out.println("\nPOSTORDEN:");
+        for (Integer numero : arbolRecorridos.postorden()) {
+            System.out.print(numero + " ");
+        }
     }
 }

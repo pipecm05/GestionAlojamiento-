@@ -175,4 +175,59 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>> {
         return 1 + Math.max(alturaIzquierda, alturaDerecha);
     }
 
+
+    public ListaDoble<T> inorden() {
+        ListaDoble<T> resultado = new ListaDoble<>();
+        inordenRecursivo(raiz, resultado);
+        return resultado;
+    }
+
+    private void inordenRecursivo(
+            NodoArbol<T> actual, ListaDoble<T> resultado) {
+
+        if (actual == null) {
+            return;
+        }
+
+        inordenRecursivo(actual.getIzquierdo(), resultado);
+        resultado.agregar(actual.getDato());
+        inordenRecursivo(actual.getDerecho(), resultado);
+    }
+
+    public ListaDoble<T> preorden() {
+        ListaDoble<T> resultado = new ListaDoble<>();
+        preordenRecursivo(raiz, resultado);
+        return resultado;
+    }
+
+    private void preordenRecursivo(
+            NodoArbol<T> actual, ListaDoble<T> resultado) {
+
+        if (actual == null) {
+            return;
+        }
+
+        resultado.agregar(actual.getDato());
+        preordenRecursivo(actual.getIzquierdo(), resultado);
+        preordenRecursivo(actual.getDerecho(), resultado);
+    }
+
+    public ListaDoble<T> postorden() {
+        ListaDoble<T> resultado = new ListaDoble<>();
+        postordenRecursivo(raiz, resultado);
+        return resultado;
+    }
+
+    private void postordenRecursivo(
+            NodoArbol<T> actual, ListaDoble<T> resultado) {
+
+        if (actual == null) {
+            return;
+        }
+
+        postordenRecursivo(actual.getIzquierdo(), resultado);
+        postordenRecursivo(actual.getDerecho(), resultado);
+        resultado.agregar(actual.getDato());
+    }
+
 }
