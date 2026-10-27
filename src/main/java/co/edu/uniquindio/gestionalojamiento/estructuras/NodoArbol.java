@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.estructuras;
 
 public class NodoArbol<T> {
