@@ -1,17 +1,16 @@
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
-import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ArbolBinarioBusqueda;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPreparacion;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
+import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionGrupo;
+import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionHuespedApartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
-import co.edu.uniquindio.gestionalojamiento.estructuras.ArbolBinarioBusqueda;
-import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
-import co.edu.uniquindio.gestionalojamiento.excepciones.FechasInvalidasException;
-import co.edu.uniquindio.gestionalojamiento.excepciones.ReservaSolapadaException;
-import co.edu.uniquindio.gestionalojamiento.excepciones.EstadoReservaInvalidoException;
 
 import java.time.LocalDate;
 
@@ -37,17 +36,156 @@ public class ReservaServicio {
             LocalDate fechaSalida,
             CanalReserva canal) {
 
-        if (fechaEntrada == null || fechaSalida == null
-                || !fechaSalida.isAfter(fechaEntrada)) {
-            throw new FechasInvalidasException(
-                    "La salida debe ser posterior a la entrada.");
-        }
+        validarCodigoDisponible(codigo);
+        validarFechas(fechaEntrada, fechaSalida);
 
         if (apartamento == null || huesped == null || canal == null) {
             throw new IllegalArgumentException(
                     "El apartamento, el huésped y el canal son obligatorios.");
         }
 
+        if (!disponibilidadServicio.estaDisponible(
+                apartamento, fechaEntrada, fechaSalida, reservas)) {
+            throw new IllegalArgumentException(
+                    "El apartamento no está disponible para esas fechas.");
+        }
+
+        Reserva reserva = new Reserva(
+                codigo, apartamento, huesped,
+                fechaEntrada, fechaSalida, canal);
+
+        reservas.insertar(reserva);
+        return reserva;
+    }
+
+    /**
+     * Registra una reserva por cada apartamento del grupo.
+     * Cada reserva contiene únicamente los huéspedes asignados
+     * al apartamento correspondiente.
+     */
+    public ListaDoble<Reserva> registrarReservaGrupal(
+            String codigoBase,
+            AsignacionGrupo grupo,
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida,
+            CanalReserva canal) {
+
+        if (codigoBase == null || codigoBase.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El código base de la reserva es obligatorio.");
+        }
+
+        if (grupo == null) {
+            throw new IllegalArgumentException(
+                    "El grupo es obligatorio.");
+        }
+
+        if (grupo.getApartamentos() == null
+                || grupo.getApartamentos().estaVacia()) {
+            throw new IllegalArgumentException(
+                    "El grupo debe tener apartamentos asignados.");
+        }
+
+        if (grupo.getAsignaciones() == null
+                || grupo.getAsignaciones().estaVacia()) {
+            throw new IllegalArgumentException(
+                    "El grupo debe tener huéspedes asignados a sus apartamentos.");
+        }
+
+        if (canal == null) {
+            throw new IllegalArgumentException(
+                    "El canal de reserva es obligatorio.");
+        }
+
+        validarFechas(fechaEntrada, fechaSalida);
+
+        // Primera fase: validar todo sin registrar ninguna reserva.
+        for (Apartamento apartamento : grupo.getApartamentos()) {
+
+            if (apartamento == null) {
+                throw new IllegalArgumentException(
+                        "El grupo contiene un apartamento nulo.");
+            }
+
+            String codigoReserva =
+                    codigoBase + "-" + apartamento.getCodigo();
+
+            validarCodigoDisponible(codigoReserva);
+
+            ListaDoble<Huesped> huespedesApartamento =
+                    obtenerHuespedesDelApartamento(grupo, apartamento);
+
+            if (huespedesApartamento.estaVacia()) {
+                throw new IllegalArgumentException(
+                        "El apartamento " + apartamento.getCodigo()
+                                + " no tiene huéspedes asignados.");
+            }
+
+            if (huespedesApartamento.getTamanio()
+                    > apartamento.getCapacidadMaxima()) {
+                throw new IllegalArgumentException(
+                        "Se supera la capacidad del apartamento "
+                                + apartamento.getCodigo() + ".");
+            }
+
+            if (!disponibilidadServicio.estaDisponible(
+                    apartamento, fechaEntrada, fechaSalida, reservas)) {
+                throw new IllegalArgumentException(
+                        "El apartamento " + apartamento.getCodigo()
+                                + " no está disponible para esas fechas.");
+            }
+        }
+
+        // Segunda fase: construir todas las reservas.
+        ListaDoble<Reserva> nuevasReservas = new ListaDoble<>();
+
+        for (Apartamento apartamento : grupo.getApartamentos()) {
+
+            String codigoReserva =
+                    codigoBase + "-" + apartamento.getCodigo();
+
+            ListaDoble<Huesped> huespedesApartamento =
+                    obtenerHuespedesDelApartamento(grupo, apartamento);
+
+            Reserva reserva = new Reserva(
+                    codigoReserva,
+                    apartamento,
+                    huespedesApartamento,
+                    fechaEntrada,
+                    fechaSalida,
+                    canal);
+
+            nuevasReservas.agregar(reserva);
+        }
+
+        // Tercera fase: registrar las reservas en el árbol.
+        for (Reserva reserva : nuevasReservas) {
+            reservas.insertar(reserva);
+        }
+
+        return nuevasReservas;
+    }
+
+    private ListaDoble<Huesped> obtenerHuespedesDelApartamento(
+            AsignacionGrupo grupo,
+            Apartamento apartamento) {
+
+        ListaDoble<Huesped> huespedes = new ListaDoble<>();
+
+        for (AsignacionHuespedApartamento asignacion
+                : grupo.getAsignaciones()) {
+
+            if (asignacion.getApartamento().getCodigo()
+                    .equals(apartamento.getCodigo())) {
+
+                huespedes.agregar(asignacion.getHuesped());
+            }
+        }
+
+        return huespedes;
+    }
+
+    private void validarCodigoDisponible(String codigo) {
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException(
                     "El código de reserva es obligatorio.");
@@ -55,25 +193,19 @@ public class ReservaServicio {
 
         if (buscarPorCodigo(codigo) != null) {
             throw new IllegalArgumentException(
-                    "Ya existe una reserva con ese código.");
+                    "Ya existe una reserva con el código " + codigo + ".");
         }
+    }
 
-        if (!disponibilidadServicio.estaDisponible(
-                apartamento, fechaEntrada, fechaSalida, reservas)) {
-            throw new ReservaSolapadaException(
-                    "El apartamento ya tiene una reserva en esas fechas.");
+    private void validarFechas(
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida) {
+
+        if (fechaEntrada == null || fechaSalida == null
+                || !fechaEntrada.isBefore(fechaSalida)) {
+            throw new IllegalArgumentException(
+                    "La fecha de entrada debe ser anterior a la fecha de salida.");
         }
-
-        Reserva nuevaReserva = new Reserva(
-                codigo,
-                apartamento,
-                huesped,
-                fechaEntrada,
-                fechaSalida,
-                canal);
-
-        reservas.insertar(nuevaReserva);
-        return nuevaReserva;
     }
 
     public Reserva buscarPorCodigo(String codigo) {
@@ -94,10 +226,6 @@ public class ReservaServicio {
         return reservas.inorden();
     }
 
-    public int getCantidadReservas() {
-        return reservas.getTamanio();
-    }
-
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
@@ -108,10 +236,10 @@ public class ReservaServicio {
     }
 
     public void confirmarReserva(String codigo) {
-        Reserva reserva = obtenerReserva(codigo);
+        Reserva reserva = buscarReservaObligatoria(codigo);
 
         if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
-            throw new EstadoReservaInvalidoException(
+            throw new IllegalStateException(
                     "Solo se pueden confirmar reservas pendientes.");
         }
 
@@ -119,11 +247,12 @@ public class ReservaServicio {
     }
 
     public void cancelarReserva(String codigo) {
-        Reserva reserva = obtenerReserva(codigo);
+        Reserva reserva = buscarReservaObligatoria(codigo);
 
-        if (reserva.getEstado() != EstadoReserva.PENDIENTE
-                && reserva.getEstado() != EstadoReserva.CONFIRMADA) {
-            throw new EstadoReservaInvalidoException(
+        if (reserva.getEstado() == EstadoReserva.FINALIZADA
+                || reserva.getEstado() == EstadoReserva.CANCELADA
+                || reserva.getEstado() == EstadoReserva.NO_SHOW) {
+            throw new IllegalStateException(
                     "La reserva no se puede cancelar en su estado actual.");
         }
 
@@ -131,32 +260,30 @@ public class ReservaServicio {
     }
 
     public void registrarCheckIn(String codigo) {
-        Reserva reserva = obtenerReserva(codigo);
+        Reserva reserva = buscarReservaObligatoria(codigo);
 
         if (reserva.getEstado() != EstadoReserva.CONFIRMADA) {
-            throw new EstadoReservaInvalidoException(
-                    "Solo se puede hacer check-in de una reserva confirmada.");
+            throw new IllegalStateException(
+                    "La reserva debe estar confirmada para realizar el check-in.");
         }
 
-        Apartamento apartamento = reserva.getApartamento();
-
-        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
-            throw new EstadoReservaInvalidoException(
-                    "El apartamento debe estar preparado para el check-in.");
+        if (reserva.getApartamento().getEstado()
+                != EstadoApartamento.PREPARADO) {
+            throw new IllegalStateException(
+                    "El apartamento debe estar preparado.");
         }
 
         reserva.cambiarEstado(EstadoReserva.EN_CURSO);
-
-        apartamento.cambiarEstado(
+        reserva.getApartamento().cambiarEstado(
                 EstadoApartamento.OCUPADO, null);
     }
 
     public void registrarCheckOut(String codigo) {
-        Reserva reserva = obtenerReserva(codigo);
+        Reserva reserva = buscarReservaObligatoria(codigo);
 
         if (reserva.getEstado() != EstadoReserva.EN_CURSO) {
-            throw new EstadoReservaInvalidoException(
-                    "Solo se puede hacer check-out de una reserva en curso.");
+            throw new IllegalStateException(
+                    "Solo se puede realizar check-out de una reserva en curso.");
         }
 
         Apartamento apartamento = reserva.getApartamento();
@@ -164,16 +291,13 @@ public class ReservaServicio {
         reserva.cambiarEstado(EstadoReserva.FINALIZADA);
 
         apartamento.cambiarEstado(
-                EstadoApartamento.PENDIENTE_PREPARACION, null);
+                EstadoApartamento.PENDIENTE_PREPARACION,
+                "Pendiente de limpieza después del check-out.");
 
         preparacionServicio.agregarApartamento(apartamento);
     }
 
-    public PreparacionServicio getPreparacionServicio() {
-        return preparacionServicio;
-    }
-
-    private Reserva obtenerReserva(String codigo) {
+    private Reserva buscarReservaObligatoria(String codigo) {
         Reserva reserva = buscarPorCodigo(codigo);
 
         if (reserva == null) {
@@ -182,5 +306,9 @@ public class ReservaServicio {
         }
 
         return reserva;
+    }
+
+    public PreparacionServicio getPreparacionServicio() {
+        return preparacionServicio;
     }
 }
