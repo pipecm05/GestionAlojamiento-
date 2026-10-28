@@ -1,11 +1,16 @@
-
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPrecio;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoCapacidad;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoReservas;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 
 public class DisponibilidadServicio {
 
@@ -32,6 +37,92 @@ public class DisponibilidadServicio {
         }
 
         return true;
+    }
+
+    public ListaDoble<Apartamento> buscarDisponibles(
+            ListaDoble<Apartamento> apartamentos,
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida,
+            int cantidadPersonas,
+            Iterable<Reserva> reservas,
+            Comparator<Apartamento> comparador
+    ) {
+        if (apartamentos == null || reservas == null) {
+            throw new IllegalArgumentException(
+                    "Los apartamentos y las reservas son obligatorios."
+            );
+        }
+
+        if (cantidadPersonas <= 0) {
+            throw new IllegalArgumentException(
+                    "La cantidad de personas debe ser mayor que cero."
+            );
+        }
+
+        if (comparador == null) {
+            throw new IllegalArgumentException(
+                    "El criterio de ordenamiento es obligatorio."
+            );
+        }
+
+        ListaDoble<Apartamento> resultado = new ListaDoble<>();
+
+        for (Apartamento apartamento : apartamentos) {
+            if (apartamento.getEstado() == EstadoApartamento.PREPARADO
+                    && apartamento.getCapacidadMaxima() >= cantidadPersonas
+                    && estaDisponible(
+                    apartamento,
+                    fechaEntrada,
+                    fechaSalida,
+                    reservas
+            )) {
+                insertarOrdenado(resultado, apartamento, comparador);
+            }
+        }
+
+        return resultado;
+    }
+
+    public Comparator<Apartamento> ordenarPorPrecio() {
+        return new ComparadorApartamentoPrecio();
+    }
+
+    public Comparator<Apartamento> ordenarPorCapacidad() {
+        return new ComparadorApartamentoCapacidad();
+    }
+
+    public Comparator<Apartamento> ordenarPorReservas(
+            Iterable<Reserva> reservas
+    ) {
+        return new ComparadorApartamentoReservas(reservas);
+    }
+
+    private void insertarOrdenado(
+            ListaDoble<Apartamento> lista,
+            Apartamento apartamento,
+            Comparator<Apartamento> comparador
+    ) {
+        ListaDoble<Apartamento> auxiliar = new ListaDoble<>();
+        boolean insertado = false;
+
+        for (Apartamento actual : lista) {
+            if (!insertado && comparador.compare(apartamento, actual) < 0) {
+                auxiliar.agregar(apartamento);
+                insertado = true;
+            }
+
+            auxiliar.agregar(actual);
+        }
+
+        if (!insertado) {
+            auxiliar.agregar(apartamento);
+        }
+
+        lista.vaciar();
+
+        for (Apartamento actual : auxiliar) {
+            lista.agregar(actual);
+        }
     }
 
     public boolean seSolapan(
