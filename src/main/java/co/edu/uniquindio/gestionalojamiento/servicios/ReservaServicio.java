@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
@@ -19,10 +18,23 @@ public class ReservaServicio {
 
     private final ArbolBinarioBusqueda<Reserva> reservas;
     private final DisponibilidadServicio disponibilidadServicio;
+    private PreparacionServicio preparacionServicio;
 
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
         disponibilidadServicio = new DisponibilidadServicio();
+        preparacionServicio = null;
+    }
+
+    public void configurarPreparacion(
+            PreparacionServicio preparacionServicio) {
+
+        if (preparacionServicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio de preparación es obligatorio.");
+        }
+
+        this.preparacionServicio = preparacionServicio;
     }
 
     public Reserva registrarReserva(
@@ -31,42 +43,36 @@ public class ReservaServicio {
             Huesped huesped,
             LocalDate fechaEntrada,
             LocalDate fechaSalida,
-            CanalReserva canal
-    ) {
+            CanalReserva canal) {
+
         if (fechaEntrada == null || fechaSalida == null
                 || !fechaSalida.isAfter(fechaEntrada)) {
             throw new FechasInvalidasException(
-                    "La salida debe ser posterior a la entrada."
-            );
+                    "La salida debe ser posterior a la entrada.");
         }
 
         if (apartamento == null || huesped == null || canal == null) {
             throw new IllegalArgumentException(
-                    "El apartamento, el huésped y el canal son obligatorios."
-            );
+                    "El apartamento, el huésped y el canal son obligatorios.");
         }
 
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException(
-                    "El código de reserva es obligatorio."
-            );
+                    "El código de reserva es obligatorio.");
         }
 
         if (buscarPorCodigo(codigo) != null) {
             throw new IllegalArgumentException(
-                    "Ya existe una reserva con ese código."
-            );
+                    "Ya existe una reserva con ese código.");
         }
 
         if (!disponibilidadServicio.estaDisponible(
                 apartamento,
                 fechaEntrada,
                 fechaSalida,
-                reservas
-        )) {
+                reservas)) {
             throw new ReservaSolapadaException(
-                    "El apartamento ya tiene una reserva en esas fechas."
-            );
+                    "El apartamento ya tiene una reserva en esas fechas.");
         }
 
         Reserva nuevaReserva = new Reserva(
@@ -75,8 +81,7 @@ public class ReservaServicio {
                 huesped,
                 fechaEntrada,
                 fechaSalida,
-                canal
-        );
+                canal);
 
         reservas.insertar(nuevaReserva);
         return nuevaReserva;
@@ -107,14 +112,13 @@ public class ReservaServicio {
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
-            LocalDate fechaSalida
-    ) {
+            LocalDate fechaSalida) {
+
         return disponibilidadServicio.estaDisponible(
                 apartamento,
                 fechaEntrada,
                 fechaSalida,
-                reservas
-        );
+                reservas);
     }
 
     public void confirmarReserva(String codigo) {
@@ -122,8 +126,7 @@ public class ReservaServicio {
 
         if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
             throw new EstadoReservaInvalidoException(
-                    "Solo se pueden confirmar reservas pendientes."
-            );
+                    "Solo se pueden confirmar reservas pendientes.");
         }
 
         reserva.cambiarEstado(EstadoReserva.CONFIRMADA);
@@ -135,8 +138,7 @@ public class ReservaServicio {
         if (reserva.getEstado() != EstadoReserva.PENDIENTE
                 && reserva.getEstado() != EstadoReserva.CONFIRMADA) {
             throw new EstadoReservaInvalidoException(
-                    "La reserva no se puede cancelar en su estado actual."
-            );
+                    "La reserva no se puede cancelar en su estado actual.");
         }
 
         reserva.cambiarEstado(EstadoReserva.CANCELADA);
@@ -147,23 +149,20 @@ public class ReservaServicio {
 
         if (reserva.getEstado() != EstadoReserva.CONFIRMADA) {
             throw new EstadoReservaInvalidoException(
-                    "Solo se puede hacer check-in de una reserva confirmada."
-            );
+                    "Solo se puede hacer check-in de una reserva confirmada.");
         }
 
         if (reserva.getApartamento().getEstado()
                 != EstadoApartamento.PREPARADO) {
             throw new EstadoReservaInvalidoException(
-                    "El apartamento debe estar preparado para el check-in."
-            );
+                    "El apartamento debe estar preparado para el check-in.");
         }
 
         reserva.cambiarEstado(EstadoReserva.EN_CURSO);
 
         reserva.getApartamento().cambiarEstado(
                 EstadoApartamento.OCUPADO,
-                null
-        );
+                null);
     }
 
     public void registrarCheckOut(String codigo) {
@@ -171,16 +170,20 @@ public class ReservaServicio {
 
         if (reserva.getEstado() != EstadoReserva.EN_CURSO) {
             throw new EstadoReservaInvalidoException(
-                    "Solo se puede hacer check-out de una reserva en curso."
-            );
+                    "Solo se puede hacer check-out de una reserva en curso.");
+        }
+
+        Apartamento apartamento = reserva.getApartamento();
+
+        apartamento.cambiarEstado(
+                EstadoApartamento.PENDIENTE_PREPARACION,
+                null);
+
+        if (preparacionServicio != null) {
+            preparacionServicio.agregarApartamento(apartamento);
         }
 
         reserva.cambiarEstado(EstadoReserva.FINALIZADA);
-
-        reserva.getApartamento().cambiarEstado(
-                EstadoApartamento.PENDIENTE_PREPARACION,
-                null
-        );
     }
 
     private Reserva obtenerReserva(String codigo) {
@@ -188,8 +191,7 @@ public class ReservaServicio {
 
         if (reserva == null) {
             throw new IllegalArgumentException(
-                    "No existe una reserva con el código indicado."
-            );
+                    "No existe una reserva con el código indicado.");
         }
 
         return reserva;
