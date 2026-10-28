@@ -10,6 +10,7 @@ import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPre
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoCapacidad;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoReservas;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoHabitaciones;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPreparacion;
 import co.edu.uniquindio.gestionalojamiento.excepciones.FechasInvalidasException;
 
 import java.time.LocalDate;
@@ -17,9 +18,6 @@ import java.util.Comparator;
 
 public class DisponibilidadServicio {
 
-    /**
-     * Consulta las reservas usando la búsqueda recursiva del árbol.
-     */
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
@@ -45,9 +43,6 @@ public class DisponibilidadServicio {
         return conflicto == null;
     }
 
-    /**
-     * Versión compatible con cualquier colección iterable de reservas.
-     */
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
@@ -110,7 +105,6 @@ public class DisponibilidadServicio {
                     fechaEntrada,
                     fechaSalida,
                     reservas)) {
-
                 insertarOrdenado(resultado, apartamento, comparador);
             }
         }
@@ -135,6 +129,11 @@ public class DisponibilidadServicio {
         return new ComparadorApartamentoReservas(reservas);
     }
 
+    public Comparator<Apartamento> ordenarPorPreparacion(
+            Iterable<Reserva> reservas) {
+        return new ComparadorApartamentoPreparacion(reservas);
+    }
+
     private void insertarOrdenado(
             ListaDoble<Apartamento> lista,
             Apartamento apartamento,
@@ -144,7 +143,8 @@ public class DisponibilidadServicio {
         boolean insertado = false;
 
         for (Apartamento actual : lista) {
-            if (!insertado && comparador.compare(apartamento, actual) < 0) {
+            if (!insertado
+                    && comparador.compare(apartamento, actual) < 0) {
                 auxiliar.agregar(apartamento);
                 insertado = true;
             }
