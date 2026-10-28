@@ -1,19 +1,15 @@
-
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
-import co.edu.uniquindio.gestionalojamiento.enums.TemporadaTipo;
-
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
-
+import co.edu.uniquindio.gestionalojamiento.estructuras.ArbolBinarioBusqueda;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPrecio;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoCapacidad;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoReservas;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoHabitaciones;
-
 import co.edu.uniquindio.gestionalojamiento.excepciones.FechasInvalidasException;
 
 import java.time.LocalDate;
@@ -21,12 +17,43 @@ import java.util.Comparator;
 
 public class DisponibilidadServicio {
 
+    /**
+     * Consulta las reservas usando la búsqueda recursiva del árbol.
+     */
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
             LocalDate fechaSalida,
-            Iterable<Reserva> reservas
-    ) {
+            ArbolBinarioBusqueda<Reserva> reservas) {
+
+        validarDatos(apartamento, fechaEntrada, fechaSalida, reservas);
+
+        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
+            return false;
+        }
+
+        Reserva conflicto = reservas.buscarPorCriterio(reserva ->
+                reserva.getApartamento().getCodigo()
+                        .equals(apartamento.getCodigo())
+                        && estaActiva(reserva.getEstado())
+                        && seSolapan(
+                        fechaEntrada,
+                        fechaSalida,
+                        reserva.getFechaEntrada(),
+                        reserva.getFechaSalida()));
+
+        return conflicto == null;
+    }
+
+    /**
+     * Versión compatible con cualquier colección iterable de reservas.
+     */
+    public boolean estaDisponible(
+            Apartamento apartamento,
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida,
+            Iterable<Reserva> reservas) {
+
         validarDatos(apartamento, fechaEntrada, fechaSalida, reservas);
 
         if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
@@ -41,8 +68,7 @@ public class DisponibilidadServicio {
                     fechaEntrada,
                     fechaSalida,
                     reserva.getFechaEntrada(),
-                    reserva.getFechaSalida()
-            )) {
+                    reserva.getFechaSalida())) {
                 return false;
             }
         }
@@ -56,24 +82,21 @@ public class DisponibilidadServicio {
             LocalDate fechaSalida,
             int cantidadPersonas,
             Iterable<Reserva> reservas,
-            Comparator<Apartamento> comparador
-    ) {
+            Comparator<Apartamento> comparador) {
+
         if (apartamentos == null || reservas == null) {
             throw new IllegalArgumentException(
-                    "Los apartamentos y las reservas son obligatorios."
-            );
+                    "Los apartamentos y las reservas son obligatorios.");
         }
 
         if (cantidadPersonas <= 0) {
             throw new IllegalArgumentException(
-                    "La cantidad de personas debe ser mayor que cero."
-            );
+                    "La cantidad de personas debe ser mayor que cero.");
         }
 
         if (comparador == null) {
             throw new IllegalArgumentException(
-                    "El criterio de ordenamiento es obligatorio."
-            );
+                    "El criterio de ordenamiento es obligatorio.");
         }
 
         validarFechas(fechaEntrada, fechaSalida);
@@ -86,8 +109,8 @@ public class DisponibilidadServicio {
                     apartamento,
                     fechaEntrada,
                     fechaSalida,
-                    reservas
-            )) {
+                    reservas)) {
+
                 insertarOrdenado(resultado, apartamento, comparador);
             }
         }
@@ -108,16 +131,15 @@ public class DisponibilidadServicio {
     }
 
     public Comparator<Apartamento> ordenarPorReservas(
-            Iterable<Reserva> reservas
-    ) {
+            Iterable<Reserva> reservas) {
         return new ComparadorApartamentoReservas(reservas);
     }
 
     private void insertarOrdenado(
             ListaDoble<Apartamento> lista,
             Apartamento apartamento,
-            Comparator<Apartamento> comparador
-    ) {
+            Comparator<Apartamento> comparador) {
+
         ListaDoble<Apartamento> auxiliar = new ListaDoble<>();
         boolean insertado = false;
 
@@ -145,8 +167,8 @@ public class DisponibilidadServicio {
             LocalDate entradaNueva,
             LocalDate salidaNueva,
             LocalDate entradaExistente,
-            LocalDate salidaExistente
-    ) {
+            LocalDate salidaExistente) {
+
         return entradaNueva.isBefore(salidaExistente)
                 && salidaNueva.isAfter(entradaExistente);
     }
@@ -161,12 +183,11 @@ public class DisponibilidadServicio {
             Apartamento apartamento,
             LocalDate entrada,
             LocalDate salida,
-            Iterable<Reserva> reservas
-    ) {
+            Object reservas) {
+
         if (apartamento == null || reservas == null) {
             throw new IllegalArgumentException(
-                    "El apartamento y las reservas son obligatorios."
-            );
+                    "El apartamento y las reservas son obligatorios.");
         }
 
         validarFechas(entrada, salida);
@@ -174,13 +195,12 @@ public class DisponibilidadServicio {
 
     private void validarFechas(
             LocalDate entrada,
-            LocalDate salida
-    ) {
+            LocalDate salida) {
+
         if (entrada == null || salida == null
                 || !salida.isAfter(entrada)) {
             throw new FechasInvalidasException(
-                    "La fecha de salida debe ser posterior a la entrada."
-            );
+                    "La fecha de salida debe ser posterior a la entrada.");
         }
     }
 }

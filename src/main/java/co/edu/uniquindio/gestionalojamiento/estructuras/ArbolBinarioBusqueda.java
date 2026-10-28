@@ -1,9 +1,12 @@
-package co.edu.uniquindio.gestionalojamiento.estructuras;
-import java.util.Iterator;
-import java.util.Comparator;
 
-public class ArbolBinarioBusqueda<T extends Comparable<T>>
-        implements Iterable<T> {
+package co.edu.uniquindio.gestionalojamiento.estructuras;
+
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class ArbolBinarioBusqueda<T extends Comparable<T>> implements Iterable<T> {
 
     private NodoArbol<T> raiz;
     private int tamanio;
@@ -23,9 +26,7 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
 
     public boolean insertar(T dato) {
         if (dato == null) {
-            throw new IllegalArgumentException(
-                    "No se permiten elementos nulos."
-            );
+            throw new IllegalArgumentException("El dato no puede ser nulo.");
         }
 
         if (buscar(dato) != null) {
@@ -48,12 +49,10 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
 
         if (comparacion < 0) {
             actual.setIzquierdo(
-                    insertarRecursivo(actual.getIzquierdo(), dato)
-            );
+                    insertarRecursivo(actual.getIzquierdo(), dato));
         } else if (comparacion > 0) {
             actual.setDerecho(
-                    insertarRecursivo(actual.getDerecho(), dato)
-            );
+                    insertarRecursivo(actual.getDerecho(), dato));
         }
 
         return actual;
@@ -61,9 +60,7 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
 
     public T buscar(T dato) {
         if (dato == null) {
-            throw new IllegalArgumentException(
-                    "No se permiten búsquedas de valores nulos."
-            );
+            throw new IllegalArgumentException("El dato no puede ser nulo.");
         }
 
         return buscarRecursivo(raiz, dato);
@@ -87,12 +84,9 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
         return buscarRecursivo(actual.getDerecho(), dato);
     }
 
-
     public boolean eliminar(T dato) {
         if (dato == null) {
-            throw new IllegalArgumentException(
-                    "No se permiten valores nulos."
-            );
+            throw new IllegalArgumentException("El dato no puede ser nulo.");
         }
 
         if (buscar(dato) == null) {
@@ -115,16 +109,11 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
 
         if (comparacion < 0) {
             actual.setIzquierdo(
-                    eliminarRecursivo(actual.getIzquierdo(), dato)
-            );
-
+                    eliminarRecursivo(actual.getIzquierdo(), dato));
         } else if (comparacion > 0) {
             actual.setDerecho(
-                    eliminarRecursivo(actual.getDerecho(), dato)
-            );
-
+                    eliminarRecursivo(actual.getDerecho(), dato));
         } else {
-            // Caso 1 y caso 2: cero o un hijo.
             if (actual.getIzquierdo() == null) {
                 return actual.getDerecho();
             }
@@ -133,19 +122,14 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
                 return actual.getIzquierdo();
             }
 
-            // Caso 3: dos hijos.
-            NodoArbol<T> sucesor = encontrarMinimo(
-                    actual.getDerecho()
-            );
+            NodoArbol<T> sucesor =
+                    encontrarMinimo(actual.getDerecho());
 
             actual.setDato(sucesor.getDato());
 
             actual.setDerecho(
                     eliminarRecursivo(
-                            actual.getDerecho(),
-                            sucesor.getDato()
-                    )
-            );
+                            actual.getDerecho(), sucesor.getDato()));
         }
 
         return actual;
@@ -159,7 +143,6 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
         return encontrarMinimo(actual.getIzquierdo());
     }
 
-
     public int altura() {
         return alturaRecursiva(raiz);
     }
@@ -169,15 +152,10 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
             return -1;
         }
 
-        int alturaIzquierda =
-                alturaRecursiva(actual.getIzquierdo());
-
-        int alturaDerecha =
-                alturaRecursiva(actual.getDerecho());
-
-        return 1 + Math.max(alturaIzquierda, alturaDerecha);
+        return 1 + Math.max(
+                alturaRecursiva(actual.getIzquierdo()),
+                alturaRecursiva(actual.getDerecho()));
     }
-
 
     public ListaDoble<T> inorden() {
         ListaDoble<T> resultado = new ListaDoble<>();
@@ -233,42 +211,69 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
         resultado.agregar(actual.getDato());
     }
 
-    @Override
-    public Iterator<T> iterator() {
-        return new IteradorArbol<>(inorden());
+    /**
+     * Busca recursivamente el primer elemento que cumpla
+     * una condición.
+     */
+    public T buscarPorCriterio(Predicate<? super T> criterio) {
+        if (criterio == null) {
+            throw new IllegalArgumentException(
+                    "El criterio de búsqueda es obligatorio.");
+        }
+
+        return buscarPorCriterioRecursivo(raiz, criterio);
     }
 
+    private T buscarPorCriterioRecursivo(
+            NodoArbol<T> actual,
+            Predicate<? super T> criterio) {
+
+        if (actual == null) {
+            return null;
+        }
+
+        T encontrado = buscarPorCriterioRecursivo(
+                actual.getIzquierdo(), criterio);
+
+        if (encontrado != null) {
+            return encontrado;
+        }
+
+        if (criterio.test(actual.getDato())) {
+            return actual.getDato();
+        }
+
+        return buscarPorCriterioRecursivo(
+                actual.getDerecho(), criterio);
+    }
 
     public <K> T buscarPorClave(
             K clave,
             Comparator<? super K> comparadorClaves,
-            java.util.function.Function<? super T, ? extends K> obtenerClave) {
+            Function<? super T, ? extends K> obtenerClave) {
 
         if (clave == null || comparadorClaves == null
                 || obtenerClave == null) {
             throw new IllegalArgumentException(
-                    "La clave y los criterios de búsqueda son obligatorios."
-            );
+                    "Los datos de búsqueda son obligatorios.");
         }
 
         return buscarPorClaveRecursivo(
-                raiz, clave, comparadorClaves, obtenerClave
-        );
+                raiz, clave, comparadorClaves, obtenerClave);
     }
 
     private <K> T buscarPorClaveRecursivo(
             NodoArbol<T> actual,
             K clave,
             Comparator<? super K> comparadorClaves,
-            java.util.function.Function<? super T, ? extends K> obtenerClave) {
+            Function<? super T, ? extends K> obtenerClave) {
 
         if (actual == null) {
             return null;
         }
 
         int comparacion = comparadorClaves.compare(
-                clave, obtenerClave.apply(actual.getDato())
-        );
+                clave, obtenerClave.apply(actual.getDato()));
 
         if (comparacion == 0) {
             return actual.getDato();
@@ -279,17 +284,18 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>>
                     actual.getIzquierdo(),
                     clave,
                     comparadorClaves,
-                    obtenerClave
-            );
+                    obtenerClave);
         }
 
         return buscarPorClaveRecursivo(
                 actual.getDerecho(),
                 clave,
                 comparadorClaves,
-                obtenerClave
-        );
+                obtenerClave);
     }
 
-
+    @Override
+    public Iterator<T> iterator() {
+        return new IteradorArbol<>(inorden());
+    }
 }
