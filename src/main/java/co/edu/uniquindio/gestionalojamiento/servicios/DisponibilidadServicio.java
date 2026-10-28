@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
@@ -76,25 +77,40 @@ public class DisponibilidadServicio {
             LocalDate fechaEntrada,
             LocalDate fechaSalida,
             int cantidadPersonas,
+            ArbolBinarioBusqueda<Reserva> reservas,
+            Comparator<Apartamento> comparador) {
+
+        validarBusqueda(
+                apartamentos, fechaEntrada, fechaSalida,
+                cantidadPersonas, reservas, comparador);
+
+        ListaDoble<Apartamento> resultado = new ListaDoble<>();
+
+        for (Apartamento apartamento : apartamentos) {
+            if (apartamento.getCapacidadMaxima() >= cantidadPersonas
+                    && estaDisponible(
+                    apartamento,
+                    fechaEntrada,
+                    fechaSalida,
+                    reservas)) {
+                insertarOrdenado(resultado, apartamento, comparador);
+            }
+        }
+
+        return resultado;
+    }
+
+    public ListaDoble<Apartamento> buscarDisponibles(
+            ListaDoble<Apartamento> apartamentos,
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida,
+            int cantidadPersonas,
             Iterable<Reserva> reservas,
             Comparator<Apartamento> comparador) {
 
-        if (apartamentos == null || reservas == null) {
-            throw new IllegalArgumentException(
-                    "Los apartamentos y las reservas son obligatorios.");
-        }
-
-        if (cantidadPersonas <= 0) {
-            throw new IllegalArgumentException(
-                    "La cantidad de personas debe ser mayor que cero.");
-        }
-
-        if (comparador == null) {
-            throw new IllegalArgumentException(
-                    "El criterio de ordenamiento es obligatorio.");
-        }
-
-        validarFechas(fechaEntrada, fechaSalida);
+        validarBusqueda(
+                apartamentos, fechaEntrada, fechaSalida,
+                cantidadPersonas, reservas, comparador);
 
         ListaDoble<Apartamento> resultado = new ListaDoble<>();
 
@@ -177,6 +193,32 @@ public class DisponibilidadServicio {
         return estado == EstadoReserva.PENDIENTE
                 || estado == EstadoReserva.CONFIRMADA
                 || estado == EstadoReserva.EN_CURSO;
+    }
+
+    private void validarBusqueda(
+            ListaDoble<Apartamento> apartamentos,
+            LocalDate fechaEntrada,
+            LocalDate fechaSalida,
+            int cantidadPersonas,
+            Object reservas,
+            Comparator<Apartamento> comparador) {
+
+        if (apartamentos == null || reservas == null) {
+            throw new IllegalArgumentException(
+                    "Los apartamentos y las reservas son obligatorios.");
+        }
+
+        if (cantidadPersonas <= 0) {
+            throw new IllegalArgumentException(
+                    "La cantidad de personas debe ser mayor que cero.");
+        }
+
+        if (comparador == null) {
+            throw new IllegalArgumentException(
+                    "El comparador es obligatorio.");
+        }
+
+        validarFechas(fechaEntrada, fechaSalida);
     }
 
     private void validarDatos(

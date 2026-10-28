@@ -3,6 +3,7 @@ package co.edu.uniquindio.gestionalojamiento.servicios;
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPreparacion;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
@@ -18,23 +19,14 @@ public class ReservaServicio {
 
     private final ArbolBinarioBusqueda<Reserva> reservas;
     private final DisponibilidadServicio disponibilidadServicio;
-    private PreparacionServicio preparacionServicio;
+    private final PreparacionServicio preparacionServicio;
 
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
         disponibilidadServicio = new DisponibilidadServicio();
-        preparacionServicio = null;
-    }
 
-    public void configurarPreparacion(
-            PreparacionServicio preparacionServicio) {
-
-        if (preparacionServicio == null) {
-            throw new IllegalArgumentException(
-                    "El servicio de preparación es obligatorio.");
-        }
-
-        this.preparacionServicio = preparacionServicio;
+        preparacionServicio = new PreparacionServicio(
+                new ComparadorApartamentoPreparacion(reservas));
     }
 
     public Reserva registrarReserva(
@@ -67,10 +59,7 @@ public class ReservaServicio {
         }
 
         if (!disponibilidadServicio.estaDisponible(
-                apartamento,
-                fechaEntrada,
-                fechaSalida,
-                reservas)) {
+                apartamento, fechaEntrada, fechaSalida, reservas)) {
             throw new ReservaSolapadaException(
                     "El apartamento ya tiene una reserva en esas fechas.");
         }
@@ -115,10 +104,7 @@ public class ReservaServicio {
             LocalDate fechaSalida) {
 
         return disponibilidadServicio.estaDisponible(
-                apartamento,
-                fechaEntrada,
-                fechaSalida,
-                reservas);
+                apartamento, fechaEntrada, fechaSalida, reservas);
     }
 
     public void confirmarReserva(String codigo) {
@@ -152,17 +138,17 @@ public class ReservaServicio {
                     "Solo se puede hacer check-in de una reserva confirmada.");
         }
 
-        if (reserva.getApartamento().getEstado()
-                != EstadoApartamento.PREPARADO) {
+        Apartamento apartamento = reserva.getApartamento();
+
+        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
             throw new EstadoReservaInvalidoException(
                     "El apartamento debe estar preparado para el check-in.");
         }
 
         reserva.cambiarEstado(EstadoReserva.EN_CURSO);
 
-        reserva.getApartamento().cambiarEstado(
-                EstadoApartamento.OCUPADO,
-                null);
+        apartamento.cambiarEstado(
+                EstadoApartamento.OCUPADO, null);
     }
 
     public void registrarCheckOut(String codigo) {
@@ -175,15 +161,16 @@ public class ReservaServicio {
 
         Apartamento apartamento = reserva.getApartamento();
 
-        apartamento.cambiarEstado(
-                EstadoApartamento.PENDIENTE_PREPARACION,
-                null);
-
-        if (preparacionServicio != null) {
-            preparacionServicio.agregarApartamento(apartamento);
-        }
-
         reserva.cambiarEstado(EstadoReserva.FINALIZADA);
+
+        apartamento.cambiarEstado(
+                EstadoApartamento.PENDIENTE_PREPARACION, null);
+
+        preparacionServicio.agregarApartamento(apartamento);
+    }
+
+    public PreparacionServicio getPreparacionServicio() {
+        return preparacionServicio;
     }
 
     private Reserva obtenerReserva(String codigo) {
