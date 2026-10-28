@@ -1,13 +1,20 @@
+
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
+import co.edu.uniquindio.gestionalojamiento.enums.TemporadaTipo;
+
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPrecio;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoCapacidad;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoReservas;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoHabitaciones;
+
+import co.edu.uniquindio.gestionalojamiento.excepciones.FechasInvalidasException;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -21,6 +28,10 @@ public class DisponibilidadServicio {
             Iterable<Reserva> reservas
     ) {
         validarDatos(apartamento, fechaEntrada, fechaSalida, reservas);
+
+        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
+            return false;
+        }
 
         for (Reserva reserva : reservas) {
             if (reserva.getApartamento().getCodigo()
@@ -65,11 +76,12 @@ public class DisponibilidadServicio {
             );
         }
 
+        validarFechas(fechaEntrada, fechaSalida);
+
         ListaDoble<Apartamento> resultado = new ListaDoble<>();
 
         for (Apartamento apartamento : apartamentos) {
-            if (apartamento.getEstado() == EstadoApartamento.PREPARADO
-                    && apartamento.getCapacidadMaxima() >= cantidadPersonas
+            if (apartamento.getCapacidadMaxima() >= cantidadPersonas
                     && estaDisponible(
                     apartamento,
                     fechaEntrada,
@@ -89,6 +101,10 @@ public class DisponibilidadServicio {
 
     public Comparator<Apartamento> ordenarPorCapacidad() {
         return new ComparadorApartamentoCapacidad();
+    }
+
+    public Comparator<Apartamento> ordenarPorHabitaciones() {
+        return new ComparadorApartamentoHabitaciones();
     }
 
     public Comparator<Apartamento> ordenarPorReservas(
@@ -147,16 +163,23 @@ public class DisponibilidadServicio {
             LocalDate salida,
             Iterable<Reserva> reservas
     ) {
-        if (apartamento == null || reservas == null
-                || entrada == null || salida == null) {
+        if (apartamento == null || reservas == null) {
             throw new IllegalArgumentException(
-                    "El apartamento, las fechas y las reservas son obligatorios."
+                    "El apartamento y las reservas son obligatorios."
             );
         }
 
-        if (!salida.isAfter(entrada)) {
-            throw new IllegalArgumentException(
-                    "La salida debe ser posterior a la entrada."
+        validarFechas(entrada, salida);
+    }
+
+    private void validarFechas(
+            LocalDate entrada,
+            LocalDate salida
+    ) {
+        if (entrada == null || salida == null
+                || !salida.isAfter(entrada)) {
+            throw new FechasInvalidasException(
+                    "La fecha de salida debe ser posterior a la entrada."
             );
         }
     }
