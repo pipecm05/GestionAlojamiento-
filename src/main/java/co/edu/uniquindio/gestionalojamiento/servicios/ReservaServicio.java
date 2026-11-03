@@ -232,7 +232,7 @@ public class ReservaServicio {
             boolean insertadaGeneral = false;
 
             try {
-                insertadaGeneral = reservas.insertar(reserva);
+                insertadaGeneral = insertarEnArbolGeneral(reserva);
 
                 if (!insertadaGeneral) {
                     throw new IllegalStateException(
@@ -479,6 +479,10 @@ public class ReservaServicio {
         indicesPorApartamento.agregar(indice);
 
         return indice;
+    }
+
+    protected boolean insertarEnArbolGeneral(Reserva reserva) {
+        return reservas.insertar(reserva);
     }
 
 }

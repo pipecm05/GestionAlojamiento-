@@ -10,7 +10,7 @@ import java.time.LocalDate;
 public class IndiceReservasApartamento {
 
     private final String codigoApartamento;
-    private final ArbolBinarioBusqueda<Reserva> reservas;
+    private final ArbolIntervalosReserva reservas;;
 
     public IndiceReservasApartamento(Apartamento apartamento) {
         if (apartamento == null) {
@@ -19,7 +19,7 @@ public class IndiceReservasApartamento {
         }
 
         this.codigoApartamento = apartamento.getCodigo();
-        this.reservas = new ArbolBinarioBusqueda<>();
+        this.reservas = new ArbolIntervalosReserva();
     }
 
     public boolean registrar(Reserva reserva) {
@@ -40,23 +40,13 @@ public class IndiceReservasApartamento {
         return reservas.insertar(reserva);
     }
 
-
     public Reserva buscarConflicto(
             LocalDate entrada, LocalDate salida) {
 
         validarFechas(entrada, salida);
 
-        return reservas.buscarAntesDeLimite(
-                salida,
-                LocalDate::compareTo,
-                Reserva::getFechaEntrada,
-                reserva ->
-                        bloqueaNoches(reserva.getEstado())
-                                && entrada.isBefore(reserva.getFechaSalida())
-                                && salida.isAfter(reserva.getFechaEntrada())
-        );
+        return reservas.buscarConflicto(entrada, salida);
     }
-
 
     public boolean estaLibre(
             LocalDate entrada, LocalDate salida) {

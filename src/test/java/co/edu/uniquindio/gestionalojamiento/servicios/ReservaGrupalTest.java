@@ -424,5 +424,75 @@ class ReservaGrupalTest {
         );
     }
 
+
+    @Test
+    void debeRevertirGrupoSiFallaUnaInsercion() {
+
+        // Servicio de prueba: falla durante la segunda inserción.
+        ReservaServicio servicioConFallo = new ReservaServicio() {
+
+            private int inserciones = 0;
+
+            @Override
+            protected boolean insertarEnArbolGeneral(Reserva reserva) {
+                inserciones++;
+
+                if (inserciones == 2) {
+                    throw new IllegalStateException(
+                            "Fallo simulado en la segunda inserción.");
+                }
+
+                return super.insertarEnArbolGeneral(reserva);
+            }
+        };
+
+        AsignacionGrupo grupo = new AsignacionGrupo("G-ROLLBACK");
+
+        grupo.agregarHuesped(huesped1);
+        grupo.agregarHuesped(huesped2);
+
+        grupo.agregarApartamento(apartamento1);
+        grupo.agregarApartamento(apartamento2);
+
+        grupo.asignarHuesped(huesped1, apartamento1);
+        grupo.asignarHuesped(huesped2, apartamento2);
+
+        // El segundo registro falla cuando el primero ya existe.
+        assertThrows(
+                IllegalStateException.class,
+                () -> servicioConFallo.registrarReservaGrupal(
+                        "RG-ROLLBACK",
+                        grupo,
+                        LocalDate.of(2027, 8, 10),
+                        LocalDate.of(2027, 8, 15),
+                        CanalReserva.DIRECTA
+                )
+        );
+
+        // El árbol general debe regresar a su estado anterior.
+        assertEquals(
+                0,
+                servicioConFallo.listarReservas().getTamanio()
+        );
+
+        // El primer índice también debe quedar libre.
+        assertTrue(
+                servicioConFallo.estaDisponible(
+                        apartamento1,
+                        LocalDate.of(2027, 8, 10),
+                        LocalDate.of(2027, 8, 15)
+                )
+        );
+
+        // El segundo apartamento tampoco debe quedar reservado.
+        assertTrue(
+                servicioConFallo.estaDisponible(
+                        apartamento2,
+                        LocalDate.of(2027, 8, 10),
+                        LocalDate.of(2027, 8, 15)
+                )
+        );
+    }
+
 }
 
