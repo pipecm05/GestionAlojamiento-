@@ -20,13 +20,21 @@ public class ReservaServicio {
     private final DisponibilidadServicio disponibilidadServicio;
     private final PreparacionServicio preparacionServicio;
 
+    private final ListaDoble<IndiceReservasApartamento> indicesPorApartamento;
+
+
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
         disponibilidadServicio = new DisponibilidadServicio();
+        indicesPorApartamento = new ListaDoble<>();
 
         preparacionServicio = new PreparacionServicio(
                 new ComparadorApartamentoPreparacion(reservas));
+
+
+
     }
+
 
     public Reserva registrarReserva(
             String codigo,
@@ -44,8 +52,20 @@ public class ReservaServicio {
                     "El apartamento, el huésped y el canal son obligatorios.");
         }
 
-        if (!disponibilidadServicio.estaDisponible(
-                apartamento, fechaEntrada, fechaSalida, reservas)) {
+        // Comprobar que el apartamento esté habilitado
+        // para aceptar reservas.
+        if (apartamento.getEstado()
+                == EstadoApartamento.FUERA_DE_SERVICIO) {
+            throw new IllegalArgumentException(
+                    "El apartamento está fuera de servicio.");
+        }
+
+        // Obtener el índice propio del apartamento.
+        IndiceReservasApartamento indice =
+                obtenerOCrearIndice(apartamento);
+
+        // Comprobar las fechas usando su ABB.
+        if (!indice.estaLibre(fechaEntrada, fechaSalida)) {
             throw new IllegalArgumentException(
                     "El apartamento no está disponible para esas fechas.");
         }
@@ -54,7 +74,24 @@ public class ReservaServicio {
                 codigo, apartamento, huesped,
                 fechaEntrada, fechaSalida, canal);
 
-        reservas.insertar(reserva);
+        // Registrar primero en el árbol general.
+        if (!reservas.insertar(reserva)) {
+            throw new IllegalStateException(
+                    "No fue posible registrar la reserva.");
+        }
+
+        // Registrar también en el índice del apartamento.
+        // Si falla, revertir la inserción anterior.
+        try {
+            if (!indice.registrar(reserva)) {
+                throw new IllegalStateException(
+                        "No fue posible actualizar el índice.");
+            }
+        } catch (RuntimeException e) {
+            reservas.eliminar(reserva);
+            throw e;
+        }
+
         return reserva;
     }
 
@@ -100,12 +137,26 @@ public class ReservaServicio {
         validarFechas(fechaEntrada, fechaSalida);
 
         // Primera fase: validar todo sin registrar ninguna reserva.
+        ListaDoble<String> codigosRevisados = new ListaDoble<>();
+
         for (Apartamento apartamento : grupo.getApartamentos()) {
 
+            // Primero verificar que el apartamento no sea nulo.
             if (apartamento == null) {
                 throw new IllegalArgumentException(
                         "El grupo contiene un apartamento nulo.");
             }
+
+            // Luego verificar si está repetido.
+            for (String codigoRevisado : codigosRevisados) {
+                if (codigoRevisado.equals(apartamento.getCodigo())) {
+                    throw new IllegalArgumentException(
+                            "El apartamento "
+                                    + apartamento.getCodigo()
+                                    + " está repetido en el grupo.");
+                }
+            }
+            codigosRevisados.agregar(apartamento.getCodigo());
 
             String codigoReserva =
                     codigoBase + "-" + apartamento.getCodigo();
@@ -128,12 +179,23 @@ public class ReservaServicio {
                                 + apartamento.getCodigo() + ".");
             }
 
-            if (!disponibilidadServicio.estaDisponible(
-                    apartamento, fechaEntrada, fechaSalida, reservas)) {
+
+            if (apartamento.getEstado()
+                    == EstadoApartamento.FUERA_DE_SERVICIO) {
+                throw new IllegalArgumentException(
+                        "El apartamento " + apartamento.getCodigo()
+                                + " está fuera de servicio.");
+            }
+
+            IndiceReservasApartamento indice =
+                    obtenerOCrearIndice(apartamento);
+
+            if (!indice.estaLibre(fechaEntrada, fechaSalida)) {
                 throw new IllegalArgumentException(
                         "El apartamento " + apartamento.getCodigo()
                                 + " no está disponible para esas fechas.");
             }
+
         }
 
         // Segunda fase: construir todas las reservas.
@@ -158,11 +220,54 @@ public class ReservaServicio {
             nuevasReservas.agregar(reserva);
         }
 
-        // Tercera fase: registrar las reservas en el árbol.
-        for (Reserva reserva : nuevasReservas) {
-            reservas.insertar(reserva);
-        }
 
+        // Tercera fase: registrar en ambas estructuras.
+        ListaDoble<Reserva> registradas = new ListaDoble<>();
+
+        for (Reserva reserva : nuevasReservas) {
+
+            IndiceReservasApartamento indice =
+                    obtenerOCrearIndice(reserva.getApartamento());
+
+            boolean insertadaGeneral = false;
+
+            try {
+                insertadaGeneral = reservas.insertar(reserva);
+
+                if (!insertadaGeneral) {
+                    throw new IllegalStateException(
+                            "No se pudo registrar " + reserva.getCodigo());
+                }
+
+                if (!indice.registrar(reserva)) {
+                    throw new IllegalStateException(
+                            "No se pudo actualizar el índice de "
+                                    + reserva.getCodigo());
+                }
+
+                registradas.agregar(reserva);
+
+            } catch (RuntimeException e) {
+
+                // Deshacer la reserva actual si quedó parcialmente registrada.
+                if (insertadaGeneral) {
+                    reservas.eliminar(reserva);
+                    indice.eliminar(reserva);
+                }
+
+                // Deshacer las reservas previas de este grupo.
+                for (Reserva anterior : registradas) {
+                    reservas.eliminar(anterior);
+
+                    IndiceReservasApartamento indiceAnterior =
+                            buscarIndice(anterior.getApartamento().getCodigo());
+
+                    indiceAnterior.eliminar(anterior);
+                }
+
+                throw e;
+            }
+        }
         return nuevasReservas;
     }
 
@@ -226,14 +331,40 @@ public class ReservaServicio {
         return reservas.inorden();
     }
 
+
     public boolean estaDisponible(
             Apartamento apartamento,
             LocalDate fechaEntrada,
             LocalDate fechaSalida) {
 
-        return disponibilidadServicio.estaDisponible(
-                apartamento, fechaEntrada, fechaSalida, reservas);
+        if (apartamento == null) {
+            throw new IllegalArgumentException(
+                    "El apartamento es obligatorio.");
+        }
+
+        validarFechas(fechaEntrada, fechaSalida);
+
+        // Un apartamento fuera de servicio
+        // no acepta nuevas reservas.
+        if (apartamento.getEstado()
+                == EstadoApartamento.FUERA_DE_SERVICIO) {
+            return false;
+        }
+
+        // Buscar el índice del apartamento.
+        IndiceReservasApartamento indice =
+                buscarIndice(apartamento.getCodigo());
+
+        // Si todavía no tiene índice,
+        // no hay reservas registradas en él.
+        if (indice == null) {
+            return true;
+        }
+
+        // Consultar su árbol de reservas.
+        return indice.estaLibre(fechaEntrada, fechaSalida);
     }
+
 
     public void confirmarReserva(String codigo) {
         Reserva reserva = buscarReservaObligatoria(codigo);
@@ -311,4 +442,43 @@ public class ReservaServicio {
     public PreparacionServicio getPreparacionServicio() {
         return preparacionServicio;
     }
+
+
+    private IndiceReservasApartamento buscarIndice(
+            String codigoApartamento) {
+
+        for (IndiceReservasApartamento indice
+                : indicesPorApartamento) {
+
+            if (indice.getCodigoApartamento()
+                    .equals(codigoApartamento)) {
+                return indice;
+            }
+        }
+
+        return null;
+    }
+
+
+    private IndiceReservasApartamento obtenerOCrearIndice(
+            Apartamento apartamento) {
+
+        if (apartamento == null) {
+            throw new IllegalArgumentException(
+                    "El apartamento es obligatorio.");
+        }
+
+        IndiceReservasApartamento indice =
+                buscarIndice(apartamento.getCodigo());
+
+        if (indice != null) {
+            return indice;
+        }
+
+        indice = new IndiceReservasApartamento(apartamento);
+        indicesPorApartamento.agregar(indice);
+
+        return indice;
+    }
+
 }

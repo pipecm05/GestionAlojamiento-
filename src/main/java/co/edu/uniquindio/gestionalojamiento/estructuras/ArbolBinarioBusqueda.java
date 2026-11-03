@@ -298,4 +298,60 @@ public class ArbolBinarioBusqueda<T extends Comparable<T>> implements Iterable<T
     public Iterator<T> iterator() {
         return new IteradorArbol<>(inorden());
     }
+
+
+    public <K> T buscarAntesDeLimite(
+            K limite,
+            Comparator<? super K> comparador,
+            Function<? super T, ? extends K> obtenerClave,
+            Predicate<? super T> criterio) {
+
+        if (limite == null || comparador == null
+                || obtenerClave == null || criterio == null) {
+            throw new IllegalArgumentException(
+                    "Los parámetros de búsqueda son obligatorios.");
+        }
+
+        return buscarAntesDeLimiteRecursivo(
+                raiz, limite, comparador, obtenerClave, criterio);
+    }
+
+    private <K> T buscarAntesDeLimiteRecursivo(
+            NodoArbol<T> actual,
+            K limite,
+            Comparator<? super K> comparador,
+            Function<? super T, ? extends K> obtenerClave,
+            Predicate<? super T> criterio) {
+
+        if (actual == null) {
+            return null;
+        }
+
+        // Primero buscamos en el subárbol izquierdo.
+        T encontrado = buscarAntesDeLimiteRecursivo(
+                actual.getIzquierdo(),
+                limite, comparador, obtenerClave, criterio);
+
+        if (encontrado != null) {
+            return encontrado;
+        }
+
+        T dato = actual.getDato();
+
+        // Si la entrada del nodo alcanza o supera el límite,
+        // tampoco debemos explorar su subárbol derecho.
+        if (comparador.compare(
+                obtenerClave.apply(dato), limite) >= 0) {
+            return null;
+        }
+
+        if (criterio.test(dato)) {
+            return dato;
+        }
+
+        return buscarAntesDeLimiteRecursivo(
+                actual.getDerecho(),
+                limite, comparador, obtenerClave, criterio);
+    }
+
 }

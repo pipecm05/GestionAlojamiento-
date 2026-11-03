@@ -27,7 +27,7 @@ public class DisponibilidadServicio {
 
         validarDatos(apartamento, fechaEntrada, fechaSalida, reservas);
 
-        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
+        if (apartamento.getEstado() == EstadoApartamento.FUERA_DE_SERVICIO) {
             return false;
         }
 
@@ -52,7 +52,7 @@ public class DisponibilidadServicio {
 
         validarDatos(apartamento, fechaEntrada, fechaSalida, reservas);
 
-        if (apartamento.getEstado() != EstadoApartamento.PREPARADO) {
+        if (apartamento.getEstado() == EstadoApartamento.FUERA_DE_SERVICIO) {
             return false;
         }
 
