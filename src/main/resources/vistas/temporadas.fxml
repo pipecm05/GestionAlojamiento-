@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.TemporadasController"
+      spacing="15"
+      style="-fx-background-color: #F4F6F9;">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Configuración de temporadas"
+           style="-fx-font-size: 26px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #243447;"/>
+
+    <Label text="Define los periodos de temporada para calcular las tarifas de alojamiento."
+           wrapText="true"/>
+
+    <TitledPane text="Registrar temporada"
+                collapsible="false">
+
+        <content>
+            <GridPane hgap="12" vgap="12">
+
+                <padding>
+                    <Insets top="15" right="15" bottom="15" left="15"/>
+                </padding>
+
+                <Label text="Nombre:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtNombre"
+                           promptText="Ej. Semana Santa"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Tipo:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cbTipo"
+                          prefWidth="180"
+                          GridPane.rowIndex="0"
+                          GridPane.columnIndex="3"/>
+
+                <Label text="Fecha de inicio:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="0"/>
+
+                <DatePicker fx:id="dpInicio"
+                            GridPane.rowIndex="1"
+                            GridPane.columnIndex="1"/>
+
+                <Label text="Fecha de fin:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="2"/>
+
+                <DatePicker fx:id="dpFin"
+                            GridPane.rowIndex="1"
+                            GridPane.columnIndex="3"/>
+
+                <HBox spacing="10"
+                      GridPane.rowIndex="2"
+                      GridPane.columnIndex="1"
+                      GridPane.columnSpan="3">
+
+                    <Button text="Registrar temporada"
+                            onAction="#registrarTemporada"
+                            style="-fx-background-color: #243447;
+                                   -fx-text-fill: white;"/>
+
+                    <Button text="Limpiar"
+                            onAction="#limpiarFormulario"/>
+                </HBox>
+            </GridPane>
+        </content>
+    </TitledPane>
+
+    <Label text="Temporadas registradas"
+           style="-fx-font-size: 19px;
+                  -fx-font-weight: bold;"/>
+
+    <TableView fx:id="tablaTemporadas"
+               prefHeight="250"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+            <TableColumn fx:id="colNombre"
+                         text="Nombre"
+                         prefWidth="200"/>
+
+            <TableColumn fx:id="colTipo"
+                         text="Tipo"
+                         prefWidth="120"/>
+
+            <TableColumn fx:id="colInicio"
+                         text="Inicio"
+                         prefWidth="140"/>
+
+            <TableColumn fx:id="colFin"
+                         text="Fin (exclusivo)"
+                         prefWidth="160"/>
+        </columns>
+    </TableView>
+
+    <HBox spacing="10">
+        <Label text="Consultar temporada de:"/>
+
+        <DatePicker fx:id="dpConsulta"/>
+
+        <Button text="Consultar"
+                onAction="#consultarTemporada"/>
+    </HBox>
+
+    <Label fx:id="lblEstado"
+           text="No se han consultado temporadas."
+           wrapText="true"
+           style="-fx-text-fill: #455A64;"/>
+
+</VBox>

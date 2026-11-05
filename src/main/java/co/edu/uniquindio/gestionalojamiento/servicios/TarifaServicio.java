@@ -289,4 +289,16 @@ public class TarifaServicio {
     }
 
 
+    public ListaDoble<Temporada> listarTemporadas() {
+
+        ListaDoble<Temporada> copia = new ListaDoble<>();
+
+        for (Temporada temporada : temporadas) {
+            copia.agregar(temporada);
+        }
+
+        return copia;
+    }
+
+
 }

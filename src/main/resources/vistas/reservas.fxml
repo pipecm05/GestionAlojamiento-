@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.ReservaController"
+      spacing="14"
+      style="-fx-background-color: #F4F6F9;">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Gestión de reservas"
+           style="-fx-font-size: 26px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #243447;"/>
+
+    <Label text="Registro, disponibilidad y consulta de reservas."/>
+
+    <TitledPane text="Registrar reserva individual"
+                collapsible="false">
+        <content>
+            <GridPane hgap="12" vgap="12">
+
+                <padding>
+                    <Insets top="15" right="15"
+                            bottom="15" left="15"/>
+                </padding>
+
+                <Label text="Código:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtCodigo"
+                           promptText="Ej. R001"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Canal:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cbCanal"
+                          prefWidth="220"
+                          GridPane.rowIndex="0"
+                          GridPane.columnIndex="3"/>
+
+                <Label text="Huésped:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="0"/>
+
+                <ComboBox fx:id="cbHuesped"
+                          promptText="Selecciona un huésped"
+                          prefWidth="220"
+                          GridPane.rowIndex="1"
+                          GridPane.columnIndex="1"/>
+
+                <Label text="Apartamento:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cbApartamento"
+                          promptText="Selecciona apartamento"
+                          prefWidth="220"
+                          GridPane.rowIndex="1"
+                          GridPane.columnIndex="3"/>
+
+                <Label text="Entrada:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="0"/>
+
+                <DatePicker fx:id="dpEntrada"
+                            GridPane.rowIndex="2"
+                            GridPane.columnIndex="1"/>
+
+                <Label text="Salida:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="2"/>
+
+                <DatePicker fx:id="dpSalida"
+                            GridPane.rowIndex="2"
+                            GridPane.columnIndex="3"/>
+
+                <HBox spacing="10"
+                      GridPane.rowIndex="3"
+                      GridPane.columnIndex="1"
+                      GridPane.columnSpan="3">
+
+                    <Button text="Consultar disponibilidad"
+                            onAction="#consultarDisponibilidad"/>
+
+                    <Button text="Registrar reserva"
+                            onAction="#registrarReserva"
+                            style="-fx-background-color: #243447;
+                                   -fx-text-fill: white;"/>
+
+                    <Button text="Actualizar listas"
+                            onAction="#actualizarDatos"/>
+                </HBox>
+
+            </GridPane>
+        </content>
+    </TitledPane>
+
+    <Label text="Reservas registradas"
+           style="-fx-font-size: 19px;
+                  -fx-font-weight: bold;"/>
+
+    <HBox spacing="10">
+
+        <TextField fx:id="txtBuscar"
+                   promptText="Código de reserva"
+                   HBox.hgrow="ALWAYS"/>
+
+        <Button text="Buscar"
+                onAction="#buscarReserva"/>
+
+        <Button text="Mostrar todas"
+                onAction="#mostrarTodas"/>
+
+        <Button text="Cancelar seleccionada"
+                onAction="#cancelarSeleccionada"/>
+
+    </HBox>
+
+    <TableView fx:id="tablaReservas"
+               prefHeight="270"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+
+            <TableColumn fx:id="colCodigo"
+                         text="Código"
+                         prefWidth="115"/>
+
+            <TableColumn fx:id="colHuesped"
+                         text="Huésped"
+                         prefWidth="155"/>
+
+            <TableColumn fx:id="colApartamento"
+                         text="Apto."
+                         prefWidth="80"/>
+
+            <TableColumn fx:id="colEntrada"
+                         text="Entrada"
+                         prefWidth="105"/>
+
+            <TableColumn fx:id="colSalida"
+                         text="Salida"
+                         prefWidth="105"/>
+
+            <TableColumn fx:id="colCanal"
+                         text="Canal"
+                         prefWidth="85"/>
+
+            <TableColumn fx:id="colEstado"
+                         text="Estado"
+                         prefWidth="120"/>
+
+        </columns>
+
+    </TableView>
+
+    <!-- Acciones económicas de la reserva seleccionada -->
+    <HBox spacing="10">
+
+        <Button text="Cotizar reserva seleccionada"
+                onAction="#cotizarSeleccionada"
+                style="-fx-background-color: #243447;
+                       -fx-text-fill: white;"/>
+
+    </HBox>
+
+    <Label fx:id="lblEstado"
+           wrapText="true"
+           text="Selecciona un huésped y un apartamento."
+           style="-fx-text-fill: #455A64;"/>
+
+</VBox>

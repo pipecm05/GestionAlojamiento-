@@ -12,8 +12,7 @@ public class Huesped implements Comparable<Huesped> {
     private String correo;
     private LocalDate fechaNacimiento;
 
-    // Constructor original: conserva compatibilidad
-    // con las clases y pruebas existentes.
+    // Constructor original para mantener compatibilidad.
     public Huesped(
             String documento,
             String nombres,
@@ -45,20 +44,16 @@ public class Huesped implements Comparable<Huesped> {
             );
         }
 
-        if (correo == null || correo.isBlank()) {
-            throw new IllegalArgumentException(
-                    "El correo es obligatorio."
-            );
-        }
-
         this.documento = documento;
         this.nombres = nombres;
         this.apellidos = apellidos;
         this.telefono = telefono;
-        this.correo = correo;
+
+        // Validar el correo también desde el constructor.
+        setCorreo(correo);
     }
 
-    // Nuevo constructor con fecha de nacimiento.
+    // Constructor con fecha de nacimiento.
     public Huesped(
             String documento,
             String nombres,
@@ -126,17 +121,28 @@ public class Huesped implements Comparable<Huesped> {
     }
 
     public void setCorreo(String correo) {
+
         if (correo == null || correo.isBlank()) {
             throw new IllegalArgumentException(
                     "El correo es obligatorio."
             );
         }
 
-        this.correo = correo;
+        String correoLimpio = correo.trim();
+
+        if (!correoLimpio.matches(
+                "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new IllegalArgumentException(
+                    "El correo electrónico no tiene un formato válido."
+            );
+        }
+
+        this.correo = correoLimpio;
     }
 
     // Validar la fecha de nacimiento.
     public void setFechaNacimiento(LocalDate fechaNacimiento) {
+
         if (fechaNacimiento == null
                 || fechaNacimiento.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException(
@@ -147,7 +153,7 @@ public class Huesped implements Comparable<Huesped> {
         this.fechaNacimiento = fechaNacimiento;
     }
 
-    // Obtener la edad en una fecha específica.
+    // Calcular la edad en una fecha específica.
     public int obtenerEdadEn(LocalDate fecha) {
 
         if (fechaNacimiento == null) {
@@ -162,10 +168,12 @@ public class Huesped implements Comparable<Huesped> {
             );
         }
 
-        return Period.between(fechaNacimiento, fecha).getYears();
+        return Period.between(
+                fechaNacimiento, fecha
+        ).getYears();
     }
 
-    // Determinar si el huésped tiene menos de 6 años.
+    // Comprobar si el huésped es menor de seis años.
     public boolean esMenorDeSeisEn(LocalDate fecha) {
         return obtenerEdadEn(fecha) < 6;
     }
