@@ -13,6 +13,8 @@ import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.RegistroFolio;
 import java.time.LocalDateTime;
+import co.edu.uniquindio.gestionalojamiento.estructuras.ColaPrioridad;
+import java.util.Comparator;
 
 import java.time.LocalDate;
 
@@ -24,7 +26,7 @@ public class ReservaServicio {
 
     private final ListaDoble<IndiceReservasApartamento> indicesPorApartamento;
     private final ListaDoble<RegistroFolio> foliosPorReserva;
-
+    private final ColaPrioridad<Reserva> colaVencimientos;
 
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
@@ -34,7 +36,8 @@ public class ReservaServicio {
         preparacionServicio = new PreparacionServicio(
                 new ComparadorApartamentoPreparacion(reservas));
 
-
+        colaVencimientos = new ColaPrioridad<>(10,
+                Comparator.comparing(Reserva::getFechaVencimiento).thenComparing(Reserva::getCodigo));
 
     }
 
@@ -93,6 +96,11 @@ public class ReservaServicio {
         } catch (RuntimeException e) {
             reservas.eliminar(reserva);
             throw e;
+        }
+
+
+        if (reserva.getCanal() == CanalReserva.PORTAL) {
+            colaVencimientos.insertar(reserva);
         }
 
         return reserva;
@@ -271,6 +279,13 @@ public class ReservaServicio {
                 throw e;
             }
         }
+
+        for (Reserva reserva : nuevasReservas) {
+            if (reserva.getCanal() == CanalReserva.PORTAL) {
+                colaVencimientos.insertar(reserva);
+            }
+        }
+
         return nuevasReservas;
     }
 
@@ -450,7 +465,9 @@ public class ReservaServicio {
         reserva.cambiarEstado(EstadoReserva.CONFIRMADA);
     }
 
+
     public void cancelarReserva(String codigo) {
+
         Reserva reserva = buscarReservaObligatoria(codigo);
 
         if (reserva.getEstado() == EstadoReserva.FINALIZADA
@@ -458,6 +475,19 @@ public class ReservaServicio {
                 || reserva.getEstado() == EstadoReserva.NO_SHOW) {
             throw new IllegalStateException(
                     "La reserva no se puede cancelar en su estado actual.");
+        }
+
+        IndiceReservasApartamento indice =
+                buscarIndice(reserva.getApartamento().getCodigo());
+
+        if (indice == null) {
+            throw new IllegalStateException(
+                    "No existe el índice del apartamento.");
+        }
+
+        if (!indice.eliminar(reserva)) {
+            throw new IllegalStateException(
+                    "No fue posible liberar las fechas de la reserva.");
         }
 
         reserva.cambiarEstado(EstadoReserva.CANCELADA);
@@ -594,6 +624,7 @@ public class ReservaServicio {
     }
 
 
+
     public int vencerReservasPendientes(LocalDateTime fechaActual) {
 
         if (fechaActual == null) {
@@ -603,40 +634,33 @@ public class ReservaServicio {
 
         int cantidadVencidas = 0;
 
-        ListaDoble<Reserva> pendientesVencidas =
-                new ListaDoble<>();
+        while (!colaVencimientos.estaVacia()) {
 
-        // Identificar reservas que alcanzaron su vencimiento.
-        for (Reserva reserva : reservas.inorden()) {
+            Reserva reserva = colaVencimientos.consultarPrioridad();
 
-            if (reserva.estaVencidaEn(fechaActual)) {
-                pendientesVencidas.agregar(reserva);
-            }
-        }
-
-        // Cancelar y liberar los intervalos ocupados.
-        for (Reserva reserva : pendientesVencidas) {
-
-            IndiceReservasApartamento indice =
-                    buscarIndice(reserva.getApartamento().getCodigo());
-
-            if (indice == null) {
-                throw new IllegalStateException(
-                        "No existe el índice del apartamento "
-                                + reserva.getApartamento().getCodigo());
+            // Una reserva confirmada o cancelada ya no debe vencer.
+            // Se descarta de la cola cuando llega a la prioridad.
+            if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+                colaVencimientos.extraerPrioridad();
+                continue;
             }
 
-            if (!indice.eliminar(reserva)) {
-                throw new IllegalStateException(
-                        "No fue posible liberar la reserva "
-                                + reserva.getCodigo());
+            // La reserva más próxima todavía no ha vencido.
+            // Por el orden del heap, ninguna posterior ha vencido.
+            if (!reserva.estaVencidaEn(fechaActual)) {
+                break;
             }
 
-            reserva.cambiarEstado(EstadoReserva.CANCELADA);
+            // Reutilizar la cancelación y la liberación del índice.
+            cancelarReserva(reserva.getCodigo());
+
+            // Solo retirar de la cola después de cancelar.
+            colaVencimientos.extraerPrioridad();
 
             cantidadVencidas++;
         }
 
         return cantidadVencidas;
     }
+
 }

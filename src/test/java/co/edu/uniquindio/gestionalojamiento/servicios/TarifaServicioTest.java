@@ -8,6 +8,8 @@ import co.edu.uniquindio.gestionalojamiento.modelo.*;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import co.edu.uniquindio.gestionalojamiento.modelo.DetalleTarifaNoche;
+import java.util.Iterator;
 
 import java.time.LocalDate;
 
@@ -752,6 +754,222 @@ class TarifaServicioTest {
         assertEquals(
                 EstadoReserva.CONFIRMADA,
                 reserva.getEstado()
+        );
+    }
+
+
+    @Test
+    void debeProcesarVencimientosConColaPrioridad() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Reserva primera = reservaServicio.registrarReserva(
+                "R-HEAP-01",
+                apartamento,
+                crearHuesped("9101", LocalDate.of(1990, 1, 1)),
+                LocalDate.of(2027, 5, 1),
+                LocalDate.of(2027, 5, 3),
+                CanalReserva.PORTAL
+        );
+
+        Reserva segunda = reservaServicio.registrarReserva(
+                "R-HEAP-02",
+                apartamento,
+                crearHuesped("9102", LocalDate.of(1992, 1, 1)),
+                LocalDate.of(2027, 5, 5),
+                LocalDate.of(2027, 5, 7),
+                CanalReserva.PORTAL
+        );
+
+        LocalDateTime fechaSimulada =
+                segunda.getFechaVencimiento().plusMinutes(1);
+
+        int vencidas = reservaServicio.vencerReservasPendientes(
+                fechaSimulada
+        );
+
+        assertEquals(2, vencidas);
+
+        assertEquals(
+                EstadoReserva.CANCELADA,
+                primera.getEstado()
+        );
+
+        assertEquals(
+                EstadoReserva.CANCELADA,
+                segunda.getEstado()
+        );
+
+        assertTrue(reservaServicio.estaDisponible(
+                apartamento,
+                primera.getFechaEntrada(),
+                primera.getFechaSalida()
+        ));
+
+        assertTrue(reservaServicio.estaDisponible(
+                apartamento,
+                segunda.getFechaEntrada(),
+                segunda.getFechaSalida()
+        ));
+
+        assertNotNull(
+                reservaServicio.buscarPorCodigo("R-HEAP-01")
+        );
+
+        assertNotNull(
+                reservaServicio.buscarPorCodigo("R-HEAP-02")
+        );
+
+        assertEquals(
+                0,
+                reservaServicio.vencerReservasPendientes(
+                        fechaSimulada
+                )
+        );
+    }
+
+    @Test
+    void colaPrioridadDebeIgnorarReservaConfirmada() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-HEAP-03",
+                apartamento,
+                crearHuesped("9103", LocalDate.of(1995, 1, 1)),
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 12),
+                CanalReserva.PORTAL
+        );
+
+        FolioServicio folio =
+                reservaServicio.obtenerFolio("R-HEAP-03");
+
+        folio.registrarPagoAnticipoPortal(
+                "P-HEAP-03",
+                servicio
+        );
+
+        reservaServicio.confirmarReserva(
+                "R-HEAP-03",
+                servicio,
+                reserva.getFechaCreacion().plusHours(1)
+        );
+
+        assertEquals(
+                EstadoReserva.CONFIRMADA,
+                reserva.getEstado()
+        );
+
+        int vencidas = reservaServicio.vencerReservasPendientes(
+                reserva.getFechaVencimiento().plusHours(1)
+        );
+
+        assertEquals(0, vencidas);
+
+        assertEquals(
+                EstadoReserva.CONFIRMADA,
+                reserva.getEstado()
+        );
+
+        assertFalse(reservaServicio.estaDisponible(
+                apartamento,
+                reserva.getFechaEntrada(),
+                reserva.getFechaSalida()
+        ));
+    }
+
+
+    @Test
+    void debeGenerarDesglosePorNoche() {
+
+        Reserva reserva = crearReserva(
+                LocalDate.of(2027, 3, 9),
+                LocalDate.of(2027, 3, 12),
+                crearHuesped("9201", LocalDate.of(1995, 5, 10)),
+                crearHuesped("9202", LocalDate.of(2021, 3, 10))
+        );
+
+        ListaDoble<DetalleTarifaNoche> desglose =
+                servicio.generarDesglose(reserva);
+
+        assertEquals(3, desglose.getTamanio());
+
+        Iterator<DetalleTarifaNoche> iterador =
+                desglose.iterator();
+
+        DetalleTarifaNoche primera = iterador.next();
+
+        assertEquals(
+                LocalDate.of(2027, 3, 9),
+                primera.getFecha()
+        );
+        assertEquals(TemporadaTipo.BAJA, primera.getTemporada());
+        assertEquals(2, primera.getTotalOcupantes());
+        assertEquals(1, primera.getPersonasQuePagan());
+        assertEquals(1, primera.getPersonasExentas());
+        assertEquals(50000.0, primera.getSubtotal(), 0.001);
+
+        DetalleTarifaNoche segunda = iterador.next();
+
+        assertEquals(
+                LocalDate.of(2027, 3, 10),
+                segunda.getFecha()
+        );
+        assertEquals(TemporadaTipo.MEDIA, segunda.getTemporada());
+        assertEquals(2, segunda.getPersonasQuePagan());
+        assertEquals(0, segunda.getPersonasExentas());
+        assertEquals(140000.0, segunda.getSubtotal(), 0.001);
+
+        DetalleTarifaNoche tercera = iterador.next();
+
+        assertEquals(
+                LocalDate.of(2027, 3, 11),
+                tercera.getFecha()
+        );
+        assertEquals(140000.0, tercera.getSubtotal(), 0.001);
+
+        assertFalse(iterador.hasNext());
+
+        assertEquals(
+                330000.0,
+                servicio.sumarDesglose(desglose),
+                0.001
+        );
+    }
+
+
+    @Test
+    void desgloseDebeCoincidirConCalculoRecursivo() {
+
+        Reserva reserva = crearReserva(
+                LocalDate.of(2027, 3, 9),
+                LocalDate.of(2027, 3, 22),
+                crearHuesped("9301", LocalDate.of(1988, 4, 10)),
+                crearHuesped("9302", LocalDate.of(2023, 6, 15))
+        );
+
+        double totalRecursivo =
+                servicio.calcularTotal(reserva);
+
+        ListaDoble<DetalleTarifaNoche> desglose =
+                servicio.generarDesglose(reserva);
+
+        double totalDesglose =
+                servicio.sumarDesglose(desglose);
+
+        assertEquals(13, desglose.getTamanio());
+
+        assertEquals(
+                totalRecursivo,
+                totalDesglose,
+                0.001
+        );
+
+        assertEquals(
+                930000.0,
+                totalDesglose,
+                0.001
         );
     }
 

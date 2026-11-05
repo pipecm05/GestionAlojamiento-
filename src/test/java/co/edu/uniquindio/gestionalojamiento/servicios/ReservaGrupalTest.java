@@ -494,5 +494,92 @@ class ReservaGrupalTest {
         );
     }
 
+
+    @Test
+    void cancelarReservaIndividualDebeLiberarDisponibilidad() {
+
+        LocalDate entrada = LocalDate.of(2027, 5, 10);
+        LocalDate salida = LocalDate.of(2027, 5, 15);
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-CANCEL-01",
+                apartamento1,
+                huesped1,
+                entrada,
+                salida,
+                CanalReserva.DIRECTA
+        );
+
+        assertFalse(
+                reservaServicio.estaDisponible(
+                        apartamento1, entrada, salida)
+        );
+
+        reservaServicio.cancelarReserva("R-CANCEL-01");
+
+        assertEquals(
+                EstadoReserva.CANCELADA,
+                reserva.getEstado()
+        );
+
+        assertTrue(
+                reservaServicio.estaDisponible(
+                        apartamento1, entrada, salida)
+        );
+
+        Reserva nuevaReserva = reservaServicio.registrarReserva(
+                "R-CANCEL-02",
+                apartamento1,
+                huesped2,
+                entrada,
+                salida,
+                CanalReserva.DIRECTA
+        );
+
+        assertEquals(
+                EstadoReserva.CONFIRMADA,
+                nuevaReserva.getEstado()
+        );
+
+        assertEquals(
+                2,
+                reservaServicio.listarReservas().getTamanio()
+        );
+
+        assertNotNull(
+                reservaServicio.buscarPorCodigo("R-CANCEL-01")
+        );
+    }
+
+    @Test
+    void noDebeCancelarDosVecesLaMismaReserva() {
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-CANCEL-03",
+                apartamento1,
+                huesped1,
+                LocalDate.of(2027, 6, 10),
+                LocalDate.of(2027, 6, 12),
+                CanalReserva.DIRECTA
+        );
+
+        reservaServicio.cancelarReserva("R-CANCEL-03");
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservaServicio.cancelarReserva("R-CANCEL-03")
+        );
+
+        assertEquals(
+                EstadoReserva.CANCELADA,
+                reserva.getEstado()
+        );
+
+        assertEquals(
+                1,
+                reservaServicio.listarReservas().getTamanio()
+        );
+    }
+
 }
 

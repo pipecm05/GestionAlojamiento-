@@ -6,6 +6,8 @@ import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Temporada;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
+import co.edu.uniquindio.gestionalojamiento.modelo.DetalleTarifaNoche;
+import java.util.Iterator;
 import java.time.LocalDate;
 
 public class TarifaServicio {
@@ -205,6 +207,85 @@ public class TarifaServicio {
         }
 
         return cantidad;
+    }
+
+    public ListaDoble<DetalleTarifaNoche> generarDesglose(
+            Reserva reserva) {
+
+        if (reserva == null) {
+            throw new IllegalArgumentException(
+                    "La reserva es obligatoria.");
+        }
+
+        Apartamento apartamento = reserva.getApartamento();
+        ListaDoble<Huesped> huespedes = reserva.getHuespedes();
+
+        if (huespedes.estaVacia()
+                || huespedes.getTamanio()
+                > apartamento.getCapacidadMaxima()) {
+            throw new IllegalArgumentException(
+                    "La cantidad de ocupantes no es válida.");
+        }
+
+        for (Huesped huesped : huespedes) {
+            if (huesped.getFechaNacimiento() == null) {
+                throw new IllegalArgumentException(
+                        "Falta la fecha de nacimiento de "
+                                + huesped.getNombreCompleto());
+            }
+        }
+
+        ListaDoble<DetalleTarifaNoche> desglose =
+                new ListaDoble<>();
+
+        LocalDate fechaActual = reserva.getFechaEntrada();
+
+        while (fechaActual.isBefore(reserva.getFechaSalida())) {
+
+            Temporada temporada = buscarTemporada(fechaActual);
+
+            TemporadaTipo tipo = temporada == null
+                    ? TemporadaTipo.BAJA
+                    : temporada.getTipo();
+
+            int personasQuePagan =
+                    contarPersonasQuePagan(huespedes, fechaActual);
+
+            DetalleTarifaNoche detalle = new DetalleTarifaNoche(
+                    fechaActual,
+                    tipo,
+                    huespedes.getTamanio(),
+                    personasQuePagan,
+                    apartamento.obtenerTarifa(tipo)
+            );
+
+            desglose.agregar(detalle);
+
+            fechaActual = fechaActual.plusDays(1);
+        }
+
+        return desglose;
+    }
+
+    public double sumarDesglose(
+            ListaDoble<DetalleTarifaNoche> desglose) {
+
+        if (desglose == null) {
+            throw new IllegalArgumentException(
+                    "El desglose es obligatorio.");
+        }
+
+        double total = 0;
+
+        Iterator<DetalleTarifaNoche> iterador =
+                desglose.iterator();
+
+        while (iterador.hasNext()) {
+            DetalleTarifaNoche detalle = iterador.next();
+            total += detalle.getSubtotal();
+        }
+
+        return total;
     }
 
 
