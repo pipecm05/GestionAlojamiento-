@@ -11,6 +11,7 @@ import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionGrupo;
 import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionHuespedApartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+import co.edu.uniquindio.gestionalojamiento.modelo.RegistroFolio;
 
 import java.time.LocalDate;
 
@@ -21,13 +22,14 @@ public class ReservaServicio {
     private final PreparacionServicio preparacionServicio;
 
     private final ListaDoble<IndiceReservasApartamento> indicesPorApartamento;
+    private final ListaDoble<RegistroFolio> foliosPorReserva;
 
 
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
         disponibilidadServicio = new DisponibilidadServicio();
         indicesPorApartamento = new ListaDoble<>();
-
+        foliosPorReserva = new ListaDoble<>();
         preparacionServicio = new PreparacionServicio(
                 new ComparadorApartamentoPreparacion(reservas));
 
@@ -366,12 +368,57 @@ public class ReservaServicio {
     }
 
 
+
     public void confirmarReserva(String codigo) {
+
         Reserva reserva = buscarReservaObligatoria(codigo);
 
         if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
             throw new IllegalStateException(
                     "Solo se pueden confirmar reservas pendientes.");
+        }
+
+        if (reserva.getCanal() == CanalReserva.PORTAL) {
+            throw new IllegalStateException(
+                    "Las reservas del portal requieren verificar "
+                            + "el anticipo con el servicio de tarifas.");
+        }
+
+        reserva.cambiarEstado(EstadoReserva.CONFIRMADA);
+    }
+
+
+    public void confirmarReserva(
+            String codigo,
+            TarifaServicio tarifaServicio) {
+
+        Reserva reserva = buscarReservaObligatoria(codigo);
+
+        if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se pueden confirmar reservas pendientes.");
+        }
+
+        if (reserva.getCanal() != CanalReserva.PORTAL) {
+            confirmarReserva(codigo);
+            return;
+        }
+
+        if (tarifaServicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio de tarifas es obligatorio.");
+        }
+
+        FolioServicio folio = obtenerFolio(codigo);
+
+        double anticipoRequerido =
+                folio.calcularAnticipoPortal(tarifaServicio);
+
+        if (folio.obtenerPagosNetos() + 0.001
+                < anticipoRequerido) {
+            throw new IllegalStateException(
+                    "No se ha registrado el anticipo mínimo "
+                            + "del 30 % para confirmar la reserva.");
         }
 
         reserva.cambiarEstado(EstadoReserva.CONFIRMADA);
@@ -484,5 +531,41 @@ public class ReservaServicio {
     protected boolean insertarEnArbolGeneral(Reserva reserva) {
         return reservas.insertar(reserva);
     }
+
+
+    public double cotizarReserva(
+            String codigo,
+            TarifaServicio tarifaServicio) {
+
+        if (tarifaServicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio de tarifas es obligatorio.");
+        }
+
+        Reserva reserva = buscarReservaObligatoria(codigo);
+
+        return tarifaServicio.calcularTotal(reserva);
+    }
+
+    public FolioServicio obtenerFolio(String codigoReserva) {
+
+        Reserva reserva = buscarReservaObligatoria(codigoReserva);
+
+        for (RegistroFolio registro : foliosPorReserva) {
+
+            if (registro.getCodigoReserva().equals(codigoReserva)) {
+                return registro.getFolio();
+            }
+        }
+
+        FolioServicio nuevoFolio = new FolioServicio(reserva);
+
+        foliosPorReserva.agregar(
+                new RegistroFolio(codigoReserva, nuevoFolio)
+        );
+
+        return nuevoFolio;
+    }
+
 
 }
