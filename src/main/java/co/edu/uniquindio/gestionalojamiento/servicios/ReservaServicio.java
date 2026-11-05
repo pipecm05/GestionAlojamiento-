@@ -12,6 +12,7 @@ import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionHuespedApartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.RegistroFolio;
+import java.time.LocalDateTime;
 
 import java.time.LocalDate;
 
@@ -388,11 +389,30 @@ public class ReservaServicio {
     }
 
 
+
     public void confirmarReserva(
             String codigo,
             TarifaServicio tarifaServicio) {
 
+        confirmarReserva(
+                codigo,
+                tarifaServicio,
+                LocalDateTime.now()
+        );
+    }
+
+
+    void confirmarReserva(
+            String codigo,
+            TarifaServicio tarifaServicio,
+            LocalDateTime fechaActual) {
+
         Reserva reserva = buscarReservaObligatoria(codigo);
+
+        if (fechaActual == null) {
+            throw new IllegalArgumentException(
+                    "La fecha actual es obligatoria.");
+        }
 
         if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
             throw new IllegalStateException(
@@ -402,6 +422,12 @@ public class ReservaServicio {
         if (reserva.getCanal() != CanalReserva.PORTAL) {
             confirmarReserva(codigo);
             return;
+        }
+
+        if (reserva.estaVencidaEn(fechaActual)) {
+            throw new IllegalStateException(
+                    "La reserva del portal superó las 24 horas "
+                            + "y ya no puede confirmarse.");
         }
 
         if (tarifaServicio == null) {
@@ -568,4 +594,49 @@ public class ReservaServicio {
     }
 
 
+    public int vencerReservasPendientes(LocalDateTime fechaActual) {
+
+        if (fechaActual == null) {
+            throw new IllegalArgumentException(
+                    "La fecha actual es obligatoria.");
+        }
+
+        int cantidadVencidas = 0;
+
+        ListaDoble<Reserva> pendientesVencidas =
+                new ListaDoble<>();
+
+        // Identificar reservas que alcanzaron su vencimiento.
+        for (Reserva reserva : reservas.inorden()) {
+
+            if (reserva.estaVencidaEn(fechaActual)) {
+                pendientesVencidas.agregar(reserva);
+            }
+        }
+
+        // Cancelar y liberar los intervalos ocupados.
+        for (Reserva reserva : pendientesVencidas) {
+
+            IndiceReservasApartamento indice =
+                    buscarIndice(reserva.getApartamento().getCodigo());
+
+            if (indice == null) {
+                throw new IllegalStateException(
+                        "No existe el índice del apartamento "
+                                + reserva.getApartamento().getCodigo());
+            }
+
+            if (!indice.eliminar(reserva)) {
+                throw new IllegalStateException(
+                        "No fue posible liberar la reserva "
+                                + reserva.getCodigo());
+            }
+
+            reserva.cambiarEstado(EstadoReserva.CANCELADA);
+
+            cantidadVencidas++;
+        }
+
+        return cantidadVencidas;
+    }
 }

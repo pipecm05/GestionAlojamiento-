@@ -5,7 +5,7 @@ import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.TemporadaTipo;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.*;
-
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -569,5 +569,190 @@ class TarifaServicioTest {
         );
     }
 
+
+    @Test
+    void debeVencerReservaPendienteDespuesDe24Horas() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Huesped huesped = crearHuesped(
+                "8001",
+                LocalDate.of(1995, 5, 10)
+        );
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-VENCE-01",
+                apartamento,
+                huesped,
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        LocalDateTime fechaSimulada =
+                reserva.getFechaCreacion().plusHours(25);
+
+        assertFalse(
+                reservaServicio.estaDisponible(
+                        apartamento,
+                        reserva.getFechaEntrada(),
+                        reserva.getFechaSalida())
+        );
+
+        int vencidas =
+                reservaServicio.vencerReservasPendientes(
+                        fechaSimulada);
+
+        assertEquals(1, vencidas);
+
+        assertEquals(
+                EstadoReserva.CANCELADA,
+                reserva.getEstado()
+        );
+
+        assertTrue(
+                reservaServicio.estaDisponible(
+                        apartamento,
+                        reserva.getFechaEntrada(),
+                        reserva.getFechaSalida())
+        );
+
+        assertNotNull(
+                reservaServicio.buscarPorCodigo("R-VENCE-01")
+        );
+    }
+
+    @Test
+    void noDebeVencerReservaAntesDe24Horas() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Huesped huesped = crearHuesped(
+                "8002",
+                LocalDate.of(1995, 5, 10)
+        );
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-VENCE-02",
+                apartamento,
+                huesped,
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        LocalDateTime fechaSimulada =
+                reserva.getFechaCreacion().plusHours(23);
+
+        int vencidas =
+                reservaServicio.vencerReservasPendientes(
+                        fechaSimulada);
+
+        assertEquals(0, vencidas);
+
+        assertEquals(
+                EstadoReserva.PENDIENTE,
+                reserva.getEstado()
+        );
+
+        assertFalse(
+                reservaServicio.estaDisponible(
+                        apartamento,
+                        reserva.getFechaEntrada(),
+                        reserva.getFechaSalida())
+        );
+    }
+
+
+    @Test
+    void noDebeConfirmarPortalDespuesDe24Horas() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Huesped huesped = crearHuesped(
+                "9001",
+                LocalDate.of(1995, 5, 10)
+        );
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-PORTAL-VENCIDA",
+                apartamento,
+                huesped,
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        FolioServicio folio =
+                reservaServicio.obtenerFolio("R-PORTAL-VENCIDA");
+
+        // Simulamos que el anticipo está registrado.
+        folio.registrarPagoAnticipoPortal(
+                "P-VENCIDA",
+                servicio
+        );
+
+        // La confirmación se intenta 25 horas después.
+        LocalDateTime fechaSimulada =
+                reserva.getFechaCreacion().plusHours(25);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservaServicio.confirmarReserva(
+                        "R-PORTAL-VENCIDA",
+                        servicio,
+                        fechaSimulada
+                )
+        );
+
+        assertEquals(
+                EstadoReserva.PENDIENTE,
+                reserva.getEstado()
+        );
+    }
+
+
+    @Test
+    void debeConfirmarPortalAntesDe24Horas() {
+
+        ReservaServicio reservaServicio = new ReservaServicio();
+
+        Huesped huesped = crearHuesped(
+                "9002",
+                LocalDate.of(1995, 5, 10)
+        );
+
+        Reserva reserva = reservaServicio.registrarReserva(
+                "R-PORTAL-VIGENTE",
+                apartamento,
+                huesped,
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        FolioServicio folio =
+                reservaServicio.obtenerFolio("R-PORTAL-VIGENTE");
+
+        folio.registrarPagoAnticipoPortal(
+                "P-VIGENTE",
+                servicio
+        );
+
+        // La confirmación ocurre 23 horas después.
+        LocalDateTime fechaSimulada =
+                reserva.getFechaCreacion().plusHours(23);
+
+        reservaServicio.confirmarReserva(
+                "R-PORTAL-VIGENTE",
+                servicio,
+                fechaSimulada
+        );
+
+        assertEquals(
+                EstadoReserva.CONFIRMADA,
+                reserva.getEstado()
+        );
+    }
 
 }

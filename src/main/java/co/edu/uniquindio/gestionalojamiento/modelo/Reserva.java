@@ -3,7 +3,7 @@ package co.edu.uniquindio.gestionalojamiento.modelo;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
-
+import java.time.LocalDateTime;
 import java.time.LocalDate;
 
 public class Reserva implements Comparable<Reserva> {
@@ -14,6 +14,7 @@ public class Reserva implements Comparable<Reserva> {
     private final LocalDate fechaEntrada;
     private final LocalDate fechaSalida;
     private final CanalReserva canal;
+    private final LocalDateTime fechaCreacion;
     private EstadoReserva estado;
 
     // Constructor compatible con las reservas individuales existentes.
@@ -71,6 +72,7 @@ public class Reserva implements Comparable<Reserva> {
         this.fechaEntrada = fechaEntrada;
         this.fechaSalida = fechaSalida;
         this.canal = canal;
+        this.fechaCreacion = LocalDateTime.now();
 
         this.estado = canal == CanalReserva.PORTAL
                 ? EstadoReserva.PENDIENTE
@@ -193,4 +195,24 @@ public class Reserva implements Comparable<Reserva> {
                 ", estado=" + estado +
                 '}';
     }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public LocalDateTime getFechaVencimiento() {
+        return fechaCreacion.plusHours(24);
+    }
+
+    public boolean estaVencidaEn(LocalDateTime fechaConsulta) {
+
+        if (fechaConsulta == null) {
+            throw new IllegalArgumentException(
+                    "La fecha de consulta es obligatoria.");
+        }
+
+        return estado == EstadoReserva.PENDIENTE
+                && !fechaConsulta.isBefore(getFechaVencimiento());
+    }
+
 }
