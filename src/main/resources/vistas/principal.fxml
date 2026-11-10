@@ -41,6 +41,10 @@
                     maxWidth="Infinity"
                     onAction="#mostrarHuespedes"/>
 
+            <Button text="Empleados"
+                    maxWidth="Infinity"
+                    onAction="#mostrarEmpleados"/>
+
             <Button text="Reservas"
                     maxWidth="Infinity"
                     onAction="#mostrarReservas"/>

@@ -1,6 +1,8 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
+import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
 
@@ -30,6 +32,9 @@ public class PrincipalController {
 
     private final TarifaServicio tarifaServicio =
             new TarifaServicio();
+
+    private final EmpleadoServicio empleadoServicio =
+            new EmpleadoServicio();
 
     private Timeline verificadorVencimientos;
 
@@ -175,6 +180,38 @@ public class PrincipalController {
 
             mostrarError(
                     "No fue posible abrir la gestión de huéspedes.",
+                    ex
+            );
+        }
+    }
+
+    /**
+     * Abre el módulo de gestión de empleados.
+     */
+    @FXML
+    private void mostrarEmpleados() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/empleados.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            EmpleadoController controlador =
+                    loader.getController();
+
+            controlador.configurar(empleadoServicio);
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException ex) {
+
+            mostrarError(
+                    "No fue posible abrir la gestión de empleados.",
                     ex
             );
         }

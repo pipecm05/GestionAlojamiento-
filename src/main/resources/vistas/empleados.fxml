@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.EmpleadoController"
+      spacing="14"
+      style="-fx-background-color: #F4F6F9;">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Gestión de empleados"
+           style="-fx-font-size: 26px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #243447;"/>
+
+    <Label text="Registra, consulta, actualiza y administra el estado de los empleados."
+           style="-fx-font-size: 14px;"/>
+
+    <TitledPane text="Datos del empleado"
+                expanded="true"
+                collapsible="false">
+
+        <content>
+            <GridPane hgap="12" vgap="10">
+
+                <padding>
+                    <Insets top="14" right="14"
+                            bottom="14" left="14"/>
+                </padding>
+
+                <Label text="Documento:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtDocumento"
+                           promptText="Número de documento"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Nombres:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="2"/>
+
+                <TextField fx:id="txtNombres"
+                           promptText="Nombres"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="3"/>
+
+                <Label text="Apellidos:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtApellidos"
+                           promptText="Apellidos"
+                           GridPane.rowIndex="1"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Teléfono:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="2"/>
+
+                <TextField fx:id="txtTelefono"
+                           promptText="Teléfono"
+                           GridPane.rowIndex="1"
+                           GridPane.columnIndex="3"/>
+
+                <Label text="Correo:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtCorreo"
+                           promptText="Correo electrónico"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Tipo:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cmbTipo"
+                          promptText="Selecciona un tipo"
+                          maxWidth="Infinity"
+                          GridPane.rowIndex="2"
+                          GridPane.columnIndex="3"/>
+
+                <HBox spacing="8"
+                      GridPane.rowIndex="3"
+                      GridPane.columnIndex="1"
+                      GridPane.columnSpan="3">
+
+                    <Button text="Registrar"
+                            onAction="#registrarEmpleado"
+                            style="-fx-background-color: #243447;
+                                   -fx-text-fill: white;"/>
+
+                    <Button text="Actualizar"
+                            onAction="#actualizarEmpleado"/>
+
+                    <Button text="Limpiar"
+                            onAction="#limpiarFormulario"/>
+
+                </HBox>
+
+            </GridPane>
+        </content>
+    </TitledPane>
+
+    <Label text="Empleados registrados"
+           style="-fx-font-size: 19px;
+                  -fx-font-weight: bold;"/>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+
+        <TextField fx:id="txtBuscar"
+                   promptText="Buscar por documento"
+                   HBox.hgrow="ALWAYS"/>
+
+        <Button text="Buscar"
+                onAction="#buscarEmpleado"/>
+
+        <Button text="Mostrar todos"
+                onAction="#mostrarTodos"/>
+
+        <Button text="Solo activos"
+                onAction="#mostrarActivos"/>
+
+    </HBox>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+
+        <ComboBox fx:id="cmbFiltroTipo"
+                  promptText="Filtrar por tipo"
+                  prefWidth="210"/>
+
+        <Button text="Filtrar"
+                onAction="#filtrarPorTipo"/>
+
+        <Button text="Quitar filtro"
+                onAction="#limpiarFiltro"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button text="Activar"
+                onAction="#activarEmpleado"/>
+
+        <Button text="Desactivar"
+                onAction="#desactivarEmpleado"/>
+
+    </HBox>
+
+    <TableView fx:id="tablaEmpleados"
+               prefHeight="260"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+
+            <TableColumn fx:id="colDocumento"
+                         text="Documento"
+                         prefWidth="105"/>
+
+            <TableColumn fx:id="colNombre"
+                         text="Nombre completo"
+                         prefWidth="175"/>
+
+            <TableColumn fx:id="colTelefono"
+                         text="Teléfono"
+                         prefWidth="105"/>
+
+            <TableColumn fx:id="colCorreo"
+                         text="Correo"
+                         prefWidth="185"/>
+
+            <TableColumn fx:id="colTipo"
+                         text="Tipo"
+                         prefWidth="115"/>
+
+            <TableColumn fx:id="colEstado"
+                         text="Estado"
+                         prefWidth="80"/>
+
+        </columns>
+
+    </TableView>
+
+    <Label fx:id="lblEstado"
+           text="Selecciona una opción para comenzar."
+           wrapText="true"
+           style="-fx-text-fill: #455A64;"/>
+
+</VBox>
