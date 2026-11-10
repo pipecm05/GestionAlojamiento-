@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.modelo;
 
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
@@ -15,7 +14,6 @@ public class AsignacionGrupo {
             throw new IllegalArgumentException(
                     "El código de la asignación es obligatorio.");
         }
-
         this.codigo = codigo;
         this.huespedes = new ListaDoble<>();
         this.apartamentos = new ListaDoble<>();
@@ -40,15 +38,14 @@ public class AsignacionGrupo {
 
     public void agregarHuesped(Huesped huesped) {
         if (huesped == null) {
-            throw new IllegalArgumentException(
-                    "El huésped no puede ser nulo.");
+            throw new IllegalArgumentException("El huésped no puede ser nulo.");
         }
-
-        if (huespedes.contiene(huesped)) {
-            throw new IllegalArgumentException(
-                    "El huésped ya pertenece al grupo.");
+        for (Huesped existente : huespedes) {
+            if (existente.getDocumento().equals(huesped.getDocumento())) {
+                throw new IllegalArgumentException(
+                        "Ya existe un huésped con ese documento en el grupo.");
+            }
         }
-
         huespedes.agregar(huesped);
     }
 
@@ -57,30 +54,25 @@ public class AsignacionGrupo {
             throw new IllegalArgumentException(
                     "El apartamento no puede ser nulo.");
         }
-
-        if (apartamentos.contiene(apartamento)) {
-            throw new IllegalArgumentException(
-                    "El apartamento ya pertenece al grupo.");
+        for (Apartamento existente : apartamentos) {
+            if (existente.getCodigo().equals(apartamento.getCodigo())) {
+                throw new IllegalArgumentException(
+                        "Ya existe un apartamento con ese código en el grupo.");
+            }
         }
-
         apartamentos.agregar(apartamento);
     }
 
-    public void asignarHuesped(
-            Huesped huesped,
-            Apartamento apartamento) {
-
+    public void asignarHuesped(Huesped huesped, Apartamento apartamento) {
         if (huesped == null || apartamento == null) {
             throw new IllegalArgumentException(
                     "El huésped y el apartamento son obligatorios.");
         }
-
-        if (!huespedes.contiene(huesped)) {
+        if (!perteneceHuesped(huesped)) {
             throw new IllegalArgumentException(
                     "El huésped no pertenece a este grupo.");
         }
-
-        if (!apartamentos.contiene(apartamento)) {
+        if (!perteneceApartamento(apartamento)) {
             throw new IllegalArgumentException(
                     "El apartamento no pertenece a este grupo.");
         }
@@ -94,7 +86,6 @@ public class AsignacionGrupo {
         }
 
         int ocupacionActual = 0;
-
         for (AsignacionHuespedApartamento asignacion : asignaciones) {
             if (asignacion.getApartamento().getCodigo()
                     .equals(apartamento.getCodigo())) {
@@ -109,6 +100,50 @@ public class AsignacionGrupo {
 
         asignaciones.agregar(
                 new AsignacionHuespedApartamento(huesped, apartamento));
+    }
+
+    public boolean perteneceHuesped(Huesped huesped) {
+        if (huesped == null) {
+            return false;
+        }
+        for (Huesped existente : huespedes) {
+            if (existente.getDocumento().equals(huesped.getDocumento())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean perteneceApartamento(Apartamento apartamento) {
+        if (apartamento == null) {
+            return false;
+        }
+        for (Apartamento existente : apartamentos) {
+            if (existente.getCodigo().equals(apartamento.getCodigo())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean estanTodosLosHuespedesAsignados() {
+        if (huespedes.estaVacia()) {
+            return false;
+        }
+        for (Huesped huesped : huespedes) {
+            boolean encontrado = false;
+            for (AsignacionHuespedApartamento asignacion : asignaciones) {
+                if (asignacion.getHuesped().getDocumento()
+                        .equals(huesped.getDocumento())) {
+                    encontrado = true;
+                    break;
+                }
+            }
+            if (!encontrado) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

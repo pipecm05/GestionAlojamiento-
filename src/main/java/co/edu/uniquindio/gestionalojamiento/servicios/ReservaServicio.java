@@ -125,18 +125,20 @@ public class ReservaServicio {
         }
 
         if (grupo == null) {
-            throw new IllegalArgumentException(
-                    "El grupo es obligatorio.");
+            throw new IllegalArgumentException("El grupo es obligatorio.");
         }
 
-        if (grupo.getApartamentos() == null
-                || grupo.getApartamentos().estaVacia()) {
+        if (grupo.getHuespedes().estaVacia()) {
+            throw new IllegalArgumentException(
+                    "El grupo debe tener huéspedes.");
+        }
+
+        if (grupo.getApartamentos().estaVacia()) {
             throw new IllegalArgumentException(
                     "El grupo debe tener apartamentos asignados.");
         }
 
-        if (grupo.getAsignaciones() == null
-                || grupo.getAsignaciones().estaVacia()) {
+        if (grupo.getAsignaciones().estaVacia()) {
             throw new IllegalArgumentException(
                     "El grupo debe tener huéspedes asignados a sus apartamentos.");
         }
@@ -147,32 +149,26 @@ public class ReservaServicio {
         }
 
         validarFechas(fechaEntrada, fechaSalida);
+        validarAsignacionesGrupo(grupo);
 
-        // Primera fase: validar todo sin registrar ninguna reserva.
+        // Primera fase: validar todos los apartamentos sin crear índices.
         ListaDoble<String> codigosRevisados = new ListaDoble<>();
 
         for (Apartamento apartamento : grupo.getApartamentos()) {
-
-            // Primero verificar que el apartamento no sea nulo.
             if (apartamento == null) {
                 throw new IllegalArgumentException(
                         "El grupo contiene un apartamento nulo.");
             }
 
-            // Luego verificar si está repetido.
             for (String codigoRevisado : codigosRevisados) {
                 if (codigoRevisado.equals(apartamento.getCodigo())) {
                     throw new IllegalArgumentException(
-                            "El apartamento "
-                                    + apartamento.getCodigo()
-                                    + " está repetido en el grupo.");
+                            "El apartamento está repetido en el grupo.");
                 }
             }
             codigosRevisados.agregar(apartamento.getCodigo());
 
-            String codigoReserva =
-                    codigoBase + "-" + apartamento.getCodigo();
-
+            String codigoReserva = codigoBase + "-" + apartamento.getCodigo();
             validarCodigoDisponible(codigoReserva);
 
             ListaDoble<Huesped> huespedesApartamento =
@@ -191,67 +187,59 @@ public class ReservaServicio {
                                 + apartamento.getCodigo() + ".");
             }
 
-
-            if (apartamento.getEstado()
-                    == EstadoApartamento.FUERA_DE_SERVICIO) {
+            if (apartamento.getEstado() == EstadoApartamento.FUERA_DE_SERVICIO) {
                 throw new IllegalArgumentException(
                         "El apartamento " + apartamento.getCodigo()
                                 + " está fuera de servicio.");
             }
 
             IndiceReservasApartamento indice =
-                    obtenerOCrearIndice(apartamento);
+                    buscarIndice(apartamento.getCodigo());
 
-            if (!indice.estaLibre(fechaEntrada, fechaSalida)) {
+            if (indice != null
+                    && !indice.estaLibre(fechaEntrada, fechaSalida)) {
                 throw new IllegalArgumentException(
                         "El apartamento " + apartamento.getCodigo()
                                 + " no está disponible para esas fechas.");
             }
-
         }
 
-        // Segunda fase: construir todas las reservas.
+        // Segunda fase: construir todas las reservas antes de registrarlas.
         ListaDoble<Reserva> nuevasReservas = new ListaDoble<>();
 
         for (Apartamento apartamento : grupo.getApartamentos()) {
-
-            String codigoReserva =
-                    codigoBase + "-" + apartamento.getCodigo();
-
+            String codigoReserva = codigoBase + "-" + apartamento.getCodigo();
             ListaDoble<Huesped> huespedesApartamento =
                     obtenerHuespedesDelApartamento(grupo, apartamento);
 
-            Reserva reserva = new Reserva(
+            nuevasReservas.agregar(new Reserva(
                     codigoReserva,
                     apartamento,
                     huespedesApartamento,
                     fechaEntrada,
                     fechaSalida,
-                    canal);
-
-            nuevasReservas.agregar(reserva);
+                    canal));
         }
 
-
-        // Tercera fase: registrar en ambas estructuras.
+        // Tercera fase: registrar y revertir todo si ocurre un error.
         ListaDoble<Reserva> registradas = new ListaDoble<>();
 
         for (Reserva reserva : nuevasReservas) {
-
             IndiceReservasApartamento indice =
                     obtenerOCrearIndice(reserva.getApartamento());
 
             boolean insertadaGeneral = false;
+            boolean insertadaIndice = false;
 
             try {
                 insertadaGeneral = insertarEnArbolGeneral(reserva);
-
                 if (!insertadaGeneral) {
                     throw new IllegalStateException(
                             "No se pudo registrar " + reserva.getCodigo());
                 }
 
-                if (!indice.registrar(reserva)) {
+                insertadaIndice = indice.registrar(reserva);
+                if (!insertadaIndice) {
                     throw new IllegalStateException(
                             "No se pudo actualizar el índice de "
                                     + reserva.getCodigo());
@@ -260,27 +248,27 @@ public class ReservaServicio {
                 registradas.agregar(reserva);
 
             } catch (RuntimeException e) {
-
-                // Deshacer la reserva actual si quedó parcialmente registrada.
-                if (insertadaGeneral) {
-                    reservas.eliminar(reserva);
+                if (insertadaIndice) {
                     indice.eliminar(reserva);
                 }
+                if (insertadaGeneral) {
+                    reservas.eliminar(reserva);
+                }
 
-                // Deshacer las reservas previas de este grupo.
                 for (Reserva anterior : registradas) {
                     reservas.eliminar(anterior);
-
                     IndiceReservasApartamento indiceAnterior =
                             buscarIndice(anterior.getApartamento().getCodigo());
-
-                    indiceAnterior.eliminar(anterior);
+                    if (indiceAnterior != null) {
+                        indiceAnterior.eliminar(anterior);
+                    }
                 }
 
                 throw e;
             }
         }
 
+        // Las reservas del portal se agregan a la cola al finalizar el registro.
         for (Reserva reserva : nuevasReservas) {
             if (reserva.getCanal() == CanalReserva.PORTAL) {
                 colaVencimientos.insertar(reserva);
@@ -288,6 +276,44 @@ public class ReservaServicio {
         }
 
         return nuevasReservas;
+    }
+
+    private void validarAsignacionesGrupo(AsignacionGrupo grupo) {
+        if (!grupo.estanTodosLosHuespedesAsignados()) {
+            throw new IllegalArgumentException(
+                    "Todos los huéspedes del grupo deben tener un apartamento asignado.");
+        }
+
+        ListaDoble<String> documentosAsignados = new ListaDoble<>();
+
+        for (AsignacionHuespedApartamento asignacion : grupo.getAsignaciones()) {
+            if (asignacion == null
+                    || asignacion.getHuesped() == null
+                    || asignacion.getApartamento() == null) {
+                throw new IllegalArgumentException(
+                        "El grupo contiene una asignación inválida.");
+            }
+
+            Huesped huesped = asignacion.getHuesped();
+            Apartamento apartamento = asignacion.getApartamento();
+
+            if (!grupo.perteneceHuesped(huesped)) {
+                throw new IllegalArgumentException(
+                        "Una asignación contiene un huésped que no pertenece al grupo.");
+            }
+
+            if (!grupo.perteneceApartamento(apartamento)) {
+                throw new IllegalArgumentException(
+                        "Una asignación contiene un apartamento que no pertenece al grupo.");
+            }
+
+            if (documentosAsignados.contiene(huesped.getDocumento())) {
+                throw new IllegalArgumentException(
+                        "Un huésped tiene más de una asignación.");
+            }
+
+            documentosAsignados.agregar(huesped.getDocumento());
+        }
     }
 
     private ListaDoble<Huesped> obtenerHuespedesDelApartamento(
