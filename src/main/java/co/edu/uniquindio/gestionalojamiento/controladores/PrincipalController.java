@@ -1,17 +1,24 @@
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
+import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
+import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
+
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.control.Alert;
+import javafx.util.Duration;
+
 import java.io.IOException;
-import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
-import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
+import java.time.LocalDateTime;
 
 public class PrincipalController {
 
@@ -24,6 +31,8 @@ public class PrincipalController {
     private final TarifaServicio tarifaServicio =
             new TarifaServicio();
 
+    private Timeline verificadorVencimientos;
+
     @FXML
     private BorderPane panelPrincipal;
 
@@ -33,6 +42,74 @@ public class PrincipalController {
     @FXML
     public void initialize() {
         mostrarInicio();
+        iniciarVerificacionVencimientos();
+    }
+
+    /**
+     * Inicia la revisión automática de las reservas vencidas.
+     */
+    private void iniciarVerificacionVencimientos() {
+
+        // Revisar inmediatamente al iniciar la aplicación.
+        verificarReservasVencidas();
+
+        // Revisar nuevamente cada minuto.
+        verificadorVencimientos = new Timeline(
+                new KeyFrame(
+                        Duration.minutes(1),
+                        evento -> verificarReservasVencidas()
+                )
+        );
+
+        verificadorVencimientos.setCycleCount(
+                Animation.INDEFINITE
+        );
+
+        verificadorVencimientos.play();
+    }
+
+    /**
+     * Comprueba si existen reservas pendientes vencidas.
+     */
+    private void verificarReservasVencidas() {
+
+        try {
+
+            int cantidadVencidas =
+                    reservaServicio.vencerReservasPendientes(
+                            LocalDateTime.now()
+                    );
+
+            if (cantidadVencidas > 0) {
+
+                Alert alerta = new Alert(
+                        Alert.AlertType.INFORMATION
+                );
+
+                alerta.setTitle("Reservas vencidas");
+                alerta.setHeaderText(
+                        "Se actualizaron las reservas automáticamente."
+                );
+
+                alerta.setContentText(
+                        "Cantidad de reservas vencidas: "
+                                + cantidadVencidas
+                                + "\nLas fechas de los apartamentos "
+                                + "fueron liberadas."
+                );
+
+                alerta.show();
+            }
+
+        } catch (RuntimeException ex) {
+
+            System.err.println(
+                    "Error al verificar las reservas vencidas: "
+                            + ex.getMessage()
+            );
+
+            ex.printStackTrace();
+        }
     }
 
     @FXML
@@ -52,7 +129,8 @@ public class PrincipalController {
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource(
-                            "/vistas/alojamientos.fxml")
+                            "/vistas/alojamientos.fxml"
+                    )
             );
 
             Parent vista = loader.load();
@@ -66,16 +144,10 @@ public class PrincipalController {
 
         } catch (IOException ex) {
 
-            Alert alerta = new Alert(Alert.AlertType.ERROR);
-
-            alerta.setTitle("Error de navegación");
-            alerta.setHeaderText(
-                    "No fue posible abrir la gestión de alojamientos.");
-
-            alerta.setContentText(ex.getMessage());
-            alerta.showAndWait();
-
-            ex.printStackTrace();
+            mostrarError(
+                    "No fue posible abrir la gestión de alojamientos.",
+                    ex
+            );
         }
     }
 
@@ -86,7 +158,8 @@ public class PrincipalController {
 
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource(
-                            "/vistas/huespedes.fxml")
+                            "/vistas/huespedes.fxml"
+                    )
             );
 
             Parent vista = loader.load();
@@ -100,16 +173,10 @@ public class PrincipalController {
 
         } catch (IOException ex) {
 
-            Alert alerta = new Alert(Alert.AlertType.ERROR);
-
-            alerta.setTitle("Error de navegación");
-            alerta.setHeaderText(
-                    "No fue posible abrir la gestión de huéspedes.");
-
-            alerta.setContentText(ex.getMessage());
-            alerta.showAndWait();
-
-            ex.printStackTrace();
+            mostrarError(
+                    "No fue posible abrir la gestión de huéspedes.",
+                    ex
+            );
         }
     }
 
@@ -119,7 +186,9 @@ public class PrincipalController {
         try {
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/vistas/reservas.fxml")
+                    getClass().getResource(
+                            "/vistas/reservas.fxml"
+                    )
             );
 
             Parent vista = loader.load();
@@ -137,16 +206,10 @@ public class PrincipalController {
 
         } catch (IOException ex) {
 
-            Alert alerta = new Alert(Alert.AlertType.ERROR);
-
-            alerta.setTitle("Error de navegación");
-            alerta.setHeaderText(
-                    "No fue posible abrir la gestión de reservas.");
-
-            alerta.setContentText(ex.getMessage());
-            alerta.showAndWait();
-
-            ex.printStackTrace();
+            mostrarError(
+                    "No fue posible abrir la gestión de reservas.",
+                    ex
+            );
         }
     }
 
@@ -156,7 +219,9 @@ public class PrincipalController {
         try {
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/vistas/preparacion.fxml")
+                    getClass().getResource(
+                            "/vistas/preparacion.fxml"
+                    )
             );
 
             Parent vista = loader.load();
@@ -173,22 +238,16 @@ public class PrincipalController {
 
         } catch (IOException ex) {
 
-            Alert alerta = new Alert(Alert.AlertType.ERROR);
-
-            alerta.setTitle("Error de navegación");
-            alerta.setHeaderText(
-                    "No fue posible abrir la preparación de apartamentos."
+            mostrarError(
+                    "No fue posible abrir la preparación de apartamentos.",
+                    ex
             );
-
-            alerta.setContentText(ex.getMessage());
-            alerta.showAndWait();
-
-            ex.printStackTrace();
         }
     }
 
     @FXML
     private void mostrarReportes() {
+
         cambiarContenido(
                 "Reportes administrativos",
                 "Indicadores y estadísticas",
@@ -213,6 +272,7 @@ public class PrincipalController {
         );
 
         Label lblTitulo = new Label(titulo);
+
         lblTitulo.setStyle(
                 "-fx-font-size: 28px;"
                         + "-fx-font-weight: bold;"
@@ -220,12 +280,14 @@ public class PrincipalController {
         );
 
         Label lblSubtitulo = new Label(subtitulo);
+
         lblSubtitulo.setStyle(
                 "-fx-font-size: 17px;"
                         + "-fx-text-fill: #455A64;"
         );
 
         Label lblDescripcion = new Label(descripcion);
+
         lblDescripcion.setWrapText(true);
 
         lblDescripcion.setStyle(
@@ -247,7 +309,9 @@ public class PrincipalController {
         try {
 
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/vistas/temporadas.fxml")
+                    getClass().getResource(
+                            "/vistas/temporadas.fxml"
+                    )
             );
 
             Parent vista = loader.load();
@@ -261,17 +325,26 @@ public class PrincipalController {
 
         } catch (IOException ex) {
 
-            Alert alerta = new Alert(Alert.AlertType.ERROR);
-
-            alerta.setTitle("Error de navegación");
-            alerta.setHeaderText(
-                    "No fue posible abrir la configuración de temporadas."
+            mostrarError(
+                    "No fue posible abrir la configuración de temporadas.",
+                    ex
             );
-
-            alerta.setContentText(ex.getMessage());
-            alerta.showAndWait();
-
-            ex.printStackTrace();
         }
+    }
+
+    private void mostrarError(
+            String mensaje,
+            Exception ex) {
+
+        Alert alerta = new Alert(
+                Alert.AlertType.ERROR
+        );
+
+        alerta.setTitle("Error de navegación");
+        alerta.setHeaderText(mensaje);
+        alerta.setContentText(ex.getMessage());
+        alerta.showAndWait();
+
+        ex.printStackTrace();
     }
 }
