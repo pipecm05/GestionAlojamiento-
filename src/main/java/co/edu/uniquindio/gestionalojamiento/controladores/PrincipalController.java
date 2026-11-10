@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import javafx.fxml.FXML;
@@ -46,7 +45,6 @@ public class PrincipalController {
         );
     }
 
-
     @FXML
     private void mostrarAlojamientos() {
 
@@ -80,8 +78,6 @@ public class PrincipalController {
             ex.printStackTrace();
         }
     }
-
-
 
     @FXML
     private void mostrarHuespedes() {
@@ -117,8 +113,6 @@ public class PrincipalController {
         }
     }
 
-
-
     @FXML
     private void mostrarReservas() {
 
@@ -138,14 +132,17 @@ public class PrincipalController {
                     reservaServicio,
                     tarifaServicio
             );
+
             panelPrincipal.setCenter(vista);
 
         } catch (IOException ex) {
 
             Alert alerta = new Alert(Alert.AlertType.ERROR);
+
             alerta.setTitle("Error de navegación");
             alerta.setHeaderText(
                     "No fue posible abrir la gestión de reservas.");
+
             alerta.setContentText(ex.getMessage());
             alerta.showAndWait();
 
@@ -153,15 +150,41 @@ public class PrincipalController {
         }
     }
 
-
     @FXML
     private void mostrarPreparacion() {
-        cambiarContenido(
-                "Preparación de apartamentos",
-                "Control de limpieza y preparación",
-                "Desde este módulo podrás consultar "
-                        + "los apartamentos pendientes de preparación."
-        );
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/vistas/preparacion.fxml")
+            );
+
+            Parent vista = loader.load();
+
+            PreparacionController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    reservaServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException ex) {
+
+            Alert alerta = new Alert(Alert.AlertType.ERROR);
+
+            alerta.setTitle("Error de navegación");
+            alerta.setHeaderText(
+                    "No fue posible abrir la preparación de apartamentos."
+            );
+
+            alerta.setContentText(ex.getMessage());
+            alerta.showAndWait();
+
+            ex.printStackTrace();
+        }
     }
 
     @FXML
@@ -218,11 +241,11 @@ public class PrincipalController {
         panelPrincipal.setCenter(contenido);
     }
 
-
     @FXML
     private void mostrarTemporadas() {
 
         try {
+
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/vistas/temporadas.fxml")
             );
@@ -239,14 +262,16 @@ public class PrincipalController {
         } catch (IOException ex) {
 
             Alert alerta = new Alert(Alert.AlertType.ERROR);
+
             alerta.setTitle("Error de navegación");
             alerta.setHeaderText(
-                    "No fue posible abrir la configuración de temporadas.");
+                    "No fue posible abrir la configuración de temporadas."
+            );
+
             alerta.setContentText(ex.getMessage());
             alerta.showAndWait();
 
             ex.printStackTrace();
         }
     }
-
 }
