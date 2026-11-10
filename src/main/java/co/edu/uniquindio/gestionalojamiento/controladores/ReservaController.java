@@ -15,6 +15,13 @@ import co.edu.uniquindio.gestionalojamiento.modelo.DetalleTarifaNoche;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
+import co.edu.uniquindio.gestionalojamiento.servicios.FolioServicio;
+import java.time.LocalDateTime;
+import co.edu.uniquindio.gestionalojamiento.modelo.MovimientoFolio;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.Locale;
 
 public class ReservaController {
 
@@ -466,6 +473,436 @@ public class ReservaController {
             lblEstado.setText(
                     "Cotización consultada: " + reserva.getCodigo()
             );
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+
+    @FXML
+    private void registrarPagoSeleccionada() {
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva en la tabla.");
+            return;
+        }
+
+        try {
+
+            if (reserva.getCanal() != CanalReserva.PORTAL) {
+                throw new IllegalStateException(
+                        "Esta operación es exclusiva de reservas del portal.");
+            }
+
+            if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+                throw new IllegalStateException(
+                        "La reserva debe estar pendiente.");
+            }
+
+            if (reserva.estaVencidaEn(java.time.LocalDateTime.now())) {
+                throw new IllegalStateException(
+                        "La reserva superó el plazo de 24 horas.");
+            }
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            double anticipo =
+                    folio.calcularAnticipoPortal(tarifaServicio);
+
+            double pagado = folio.obtenerPagosNetos();
+
+            double faltante = Math.max(0, anticipo - pagado);
+
+            if (faltante <= 0.001) {
+                informar(
+                        "Anticipo cubierto",
+                        "Los pagos registrados ya cubren el 30 % requerido."
+                );
+                return;
+            }
+
+            TextInputDialog dialogo = new TextInputDialog(
+                    String.format(java.util.Locale.US, "%.2f", faltante)
+            );
+
+            dialogo.setTitle("Registrar pago");
+            dialogo.setHeaderText(
+                    "Registrar abono de la reserva "
+                            + reserva.getCodigo()
+            );
+
+            dialogo.setContentText(
+                    "Anticipo requerido: $" + anticipo
+                            + "\nPagado: $" + pagado
+                            + "\nFaltante: $" + faltante
+                            + "\n\nValor recibido:"
+            );
+
+            java.util.Optional<String> respuesta =
+                    dialogo.showAndWait();
+
+            if (respuesta.isEmpty()) {
+                return;
+            }
+
+            double valor = Double.parseDouble(
+                    respuesta.get().trim().replace(",", ".")
+            );
+
+            if (!Double.isFinite(valor) || valor <= 0) {
+                throw new IllegalArgumentException(
+                        "El valor debe ser positivo.");
+            }
+
+            Alert verificacion = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "¿Confirmas que recibiste y verificaste un pago de $"
+                            + String.format("%.2f", valor) + "?",
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            verificacion.setTitle("Verificación de pago");
+            verificacion.setHeaderText(
+                    "Esta acción registrará un movimiento económico."
+            );
+
+            if (verificacion.showAndWait()
+                    .orElse(ButtonType.NO) != ButtonType.YES) {
+                return;
+            }
+
+            String codigoPago = "P-" + UUID.randomUUID();
+
+            reservaServicio.registrarAbonoPortal(
+                    reserva.getCodigo(),
+                    codigoPago,
+                    valor
+            );
+
+            double nuevoTotal =
+                    folio.obtenerPagosNetos();
+
+            lblEstado.setText(
+                    "Pago registrado. Total abonado: $"
+                            + String.format("%.2f", nuevoTotal)
+            );
+
+            informar(
+                    "Pago registrado",
+                    "Abono registrado correctamente.\n"
+                            + "Total pagado: $"
+                            + String.format("%.2f", nuevoTotal)
+                            + "\nAnticipo requerido: $"
+                            + String.format("%.2f", anticipo)
+            );
+
+        } catch (NumberFormatException ex) {
+
+            error("Ingresa un valor numérico válido.");
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+
+    @FXML
+    private void confirmarSeleccionada() {
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva en la tabla.");
+            return;
+        }
+
+        try {
+
+            if (reserva.getCanal() != CanalReserva.PORTAL) {
+                throw new IllegalStateException(
+                        "Esta confirmación de pagos solo aplica al portal.");
+            }
+
+            if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+                throw new IllegalStateException(
+                        "La reserva debe estar pendiente.");
+            }
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            double anticipo =
+                    folio.calcularAnticipoPortal(tarifaServicio);
+
+            double pagado =
+                    folio.obtenerPagosNetos();
+
+            if (pagado + 0.001 < anticipo) {
+                throw new IllegalStateException(
+                        "Anticipo insuficiente.\n"
+                                + "Requerido: $" + anticipo
+                                + "\nRegistrado: $" + pagado
+                                + "\nFaltante: $"
+                                + (anticipo - pagado)
+                );
+            }
+
+            reservaServicio.confirmarReserva(
+                    reserva.getCodigo(),
+                    tarifaServicio
+            );
+
+            mostrarTodas();
+
+            lblEstado.setText(
+                    "Reserva confirmada: " + reserva.getCodigo()
+            );
+
+            informar(
+                    "Reserva confirmada",
+                    "El anticipo mínimo fue cubierto.\n"
+                            + "La reserva quedó CONFIRMADA."
+            );
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+
+
+    @FXML
+    private void consultarFolioSeleccionada() {
+
+        if (reservaServicio == null || tarifaServicio == null) {
+            error("Los servicios no están configurados.");
+            return;
+        }
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva en la tabla.");
+            return;
+        }
+
+        try {
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            StringBuilder mensaje = new StringBuilder();
+
+            mensaje.append("Reserva: ")
+                    .append(reserva.getCodigo())
+                    .append("\nApartamento: ")
+                    .append(reserva.getApartamento().getCodigo())
+                    .append("\nEstado: ")
+                    .append(reserva.getEstado())
+                    .append("\n\nHISTORIAL DE MOVIMIENTOS\n\n");
+
+            if (folio.cantidadMovimientos() == 0) {
+                mensaje.append("No hay movimientos registrados.\n");
+            } else {
+
+                for (MovimientoFolio movimiento :
+                        folio.listarMovimientos()) {
+
+                    mensaje.append("Código: ")
+                            .append(movimiento.getCodigo())
+                            .append("\nValor: $")
+                            .append(String.format(
+                                    Locale.US,
+                                    "%.2f",
+                                    movimiento.getValor()))
+                            .append("\n\n");
+                }
+            }
+
+            mensaje.append("\nTotal de movimientos: ")
+                    .append(folio.cantidadMovimientos());
+
+            mensaje.append("\nPagos netos: $")
+                    .append(String.format(
+                            Locale.US,
+                            "%.2f",
+                            folio.obtenerPagosNetos()));
+
+            mensaje.append("\nSaldo del folio: $")
+                    .append(String.format(
+                            Locale.US,
+                            "%.2f",
+                            folio.obtenerSaldo()));
+
+            Alert alerta = new Alert(Alert.AlertType.INFORMATION);
+
+            alerta.setTitle("Folio económico");
+            alerta.setHeaderText(
+                    "Movimientos de la reserva "
+                            + reserva.getCodigo());
+
+            TextArea contenido = new TextArea(mensaje.toString());
+            contenido.setEditable(false);
+            contenido.setWrapText(true);
+            contenido.setPrefSize(480, 400);
+
+            alerta.getDialogPane().setContent(contenido);
+
+            alerta.showAndWait();
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+    @FXML
+    private void registrarCargoSeleccionada() {
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva en la tabla.");
+            return;
+        }
+
+        try {
+
+            reservaServicio.registrarCargoAlojamiento(
+                    reserva.getCodigo(),
+                    tarifaServicio
+            );
+
+            informar(
+                    "Cargo registrado",
+                    "Se registró el cargo total del alojamiento "
+                            + "en el folio de la reserva."
+            );
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+
+    @FXML
+    private void pagarSaldoSeleccionada() {
+
+        if (reservaServicio == null) {
+            error("El servicio de reservas no está configurado.");
+            return;
+        }
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva de la tabla.");
+            return;
+        }
+
+        try {
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            double saldo = folio.obtenerSaldo();
+
+            if (saldo <= 0.001) {
+                throw new IllegalStateException(
+                        "No existe saldo pendiente por pagar.");
+            }
+
+            TextInputDialog dialogo = new TextInputDialog(
+                    String.format(Locale.US, "%.2f", saldo)
+            );
+
+            dialogo.setTitle("Pago del saldo");
+            dialogo.setHeaderText(
+                    "Reserva " + reserva.getCodigo());
+
+            dialogo.setContentText(
+                    "Saldo pendiente: $"
+                            + String.format(Locale.US, "%.2f", saldo)
+                            + "\nValor recibido:"
+            );
+
+            java.util.Optional<String> respuesta =
+                    dialogo.showAndWait();
+
+            if (respuesta.isEmpty()) {
+                return;
+            }
+
+            double valor = Double.parseDouble(
+                    respuesta.get().trim().replace(",", ".")
+            );
+
+            if (!Double.isFinite(valor) || valor <= 0) {
+                throw new IllegalArgumentException(
+                        "El pago debe ser positivo y válido.");
+            }
+
+            Alert confirmacion = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "¿Confirmas que recibiste y verificaste $"
+                            + String.format(Locale.US, "%.2f", valor)
+                            + "?",
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            confirmacion.setTitle("Verificar pago");
+            confirmacion.setHeaderText(
+                    "Registro de un movimiento económico");
+
+            if (confirmacion.showAndWait()
+                    .orElse(ButtonType.NO) != ButtonType.YES) {
+                return;
+            }
+
+            reservaServicio.registrarPagoSaldo(
+                    reserva.getCodigo(),
+                    "SALDO-" + UUID.randomUUID(),
+                    valor
+            );
+
+            double nuevoSaldo = folio.obtenerSaldo();
+
+            lblEstado.setText(
+                    "Saldo pendiente de " + reserva.getCodigo()
+                            + ": $"
+                            + String.format(Locale.US, "%.2f", nuevoSaldo)
+            );
+
+            informar(
+                    "Pago registrado",
+                    "El pago se registró correctamente.\n"
+                            + "Saldo pendiente: $"
+                            + String.format(Locale.US, "%.2f", nuevoSaldo)
+            );
+
+        } catch (NumberFormatException ex) {
+
+            error("Ingresa un valor numérico válido.");
 
         } catch (IllegalArgumentException
                  | IllegalStateException ex) {

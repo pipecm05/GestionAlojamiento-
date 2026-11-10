@@ -15,7 +15,8 @@ import co.edu.uniquindio.gestionalojamiento.modelo.RegistroFolio;
 import java.time.LocalDateTime;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ColaPrioridad;
 import java.util.Comparator;
-
+import co.edu.uniquindio.gestionalojamiento.modelo.MovimientoFolio;
+import java.util.Locale;
 import java.time.LocalDate;
 
 public class ReservaServicio {
@@ -661,6 +662,142 @@ public class ReservaServicio {
         }
 
         return cantidadVencidas;
+    }
+
+
+    public void registrarAbonoPortal(
+            String codigoReserva,
+            String codigoPago,
+            double valor) {
+
+        Reserva reserva = buscarReservaObligatoria(codigoReserva);
+
+        if (reserva.getCanal() != CanalReserva.PORTAL) {
+            throw new IllegalStateException(
+                    "Esta operación solo aplica a reservas del portal.");
+        }
+
+        if (reserva.getEstado() != EstadoReserva.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se admiten anticipos en reservas pendientes.");
+        }
+
+        if (reserva.estaVencidaEn(LocalDateTime.now())) {
+            throw new IllegalStateException(
+                    "La reserva superó las 24 horas permitidas.");
+        }
+
+        if (!Double.isFinite(valor) || valor <= 0) {
+            throw new IllegalArgumentException(
+                    "El valor del abono debe ser positivo y válido.");
+        }
+
+        FolioServicio folio = obtenerFolio(codigoReserva);
+
+        folio.registrarPago(
+                codigoPago,
+                "Abono recibido para reserva del portal",
+                valor
+        );
+    }
+
+
+    public void registrarCargoAlojamiento(
+            String codigoReserva,
+            TarifaServicio tarifaServicio) {
+
+        Reserva reserva = buscarReservaObligatoria(codigoReserva);
+
+        if (tarifaServicio == null) {
+            throw new IllegalArgumentException(
+                    "El servicio de tarifas es obligatorio.");
+        }
+
+        if (reserva.getEstado() == EstadoReserva.CANCELADA
+                || reserva.getEstado() == EstadoReserva.NO_SHOW) {
+            throw new IllegalStateException(
+                    "No se puede generar el cargo en una reserva cancelada.");
+        }
+
+        FolioServicio folio = obtenerFolio(codigoReserva);
+
+        String codigoCargo = "ALOJ-" + codigoReserva;
+
+        for (var movimiento : folio.listarMovimientos()) {
+            if (movimiento.getCodigo().equals(codigoCargo)) {
+                throw new IllegalStateException(
+                        "El cargo de alojamiento ya está registrado.");
+            }
+        }
+
+        double total = tarifaServicio.calcularTotal(reserva);
+
+        if (total <= 0) {
+            throw new IllegalStateException(
+                    "La reserva no tiene un cargo positivo de alojamiento.");
+        }
+
+        folio.registrarCargo(
+                codigoCargo,
+                "Cargo total del alojamiento",
+                total
+        );
+    }
+
+
+    public void registrarPagoSaldo(
+            String codigoReserva,
+            String codigoPago,
+            double valor) {
+
+        Reserva reserva = buscarReservaObligatoria(codigoReserva);
+
+        if (reserva.getEstado() != EstadoReserva.CONFIRMADA
+                && reserva.getEstado() != EstadoReserva.EN_CURSO) {
+            throw new IllegalStateException(
+                    "Solo se admiten pagos de saldo en reservas "
+                            + "confirmadas o en curso.");
+        }
+
+        if (!Double.isFinite(valor) || valor <= 0) {
+            throw new IllegalArgumentException(
+                    "El pago debe tener un valor positivo y finito.");
+        }
+
+        FolioServicio folio = obtenerFolio(codigoReserva);
+
+        String codigoCargo = "ALOJ-" + codigoReserva;
+        boolean cargoRegistrado = false;
+
+        for (var movimiento : folio.listarMovimientos()) {
+            if (movimiento.getCodigo().equals(codigoCargo)) {
+                cargoRegistrado = true;
+                break;
+            }
+        }
+
+        if (!cargoRegistrado) {
+            throw new IllegalStateException(
+                    "Primero debe registrarse el cargo del alojamiento.");
+        }
+
+        double saldo = folio.obtenerSaldo();
+
+        if (saldo <= 0.001) {
+            throw new IllegalStateException(
+                    "La reserva no tiene saldo pendiente.");
+        }
+
+        if (valor > saldo + 0.001) {
+            throw new IllegalArgumentException(
+                    "El pago supera el saldo pendiente de la reserva.");
+        }
+
+        folio.registrarPago(
+                codigoPago,
+                "Pago del saldo de alojamiento",
+                valor
+        );
     }
 
 }

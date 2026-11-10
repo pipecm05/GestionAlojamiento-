@@ -973,4 +973,286 @@ class TarifaServicioTest {
         );
     }
 
+
+    @Test
+    void debeAcumularAbonosParcialesDelPortal() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        Reserva reserva = reservas.registrarReserva(
+                "R-ABONO-01",
+                apartamento,
+                crearHuesped("9501", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-ABONO-01", "P-01", 20000);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservas.confirmarReserva(
+                        "R-ABONO-01", servicio)
+        );
+
+        assertEquals(EstadoReserva.PENDIENTE, reserva.getEstado());
+
+        reservas.registrarAbonoPortal(
+                "R-ABONO-01", "P-02", 22000);
+
+        assertEquals(
+                42000.0,
+                reservas.obtenerFolio("R-ABONO-01")
+                        .obtenerPagosNetos(),
+                0.001
+        );
+
+        reservas.confirmarReserva("R-ABONO-01", servicio);
+
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+    }
+
+    @Test
+    void noDebeRegistrarAbonoEnReservaCancelada() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-ABONO-02",
+                apartamento,
+                crearHuesped("9502", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.cancelarReserva("R-ABONO-02");
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservas.registrarAbonoPortal(
+                        "R-ABONO-02", "P-03", 10000)
+        );
+    }
+
+    @Test
+    void noDebeRegistrarAbonoDuplicado() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-ABONO-03",
+                apartamento,
+                crearHuesped("9503", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-ABONO-03", "P-04", 10000);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> reservas.registrarAbonoPortal(
+                        "R-ABONO-03", "P-04", 10000)
+        );
+
+        assertEquals(
+                10000.0,
+                reservas.obtenerFolio("R-ABONO-03")
+                        .obtenerPagosNetos(),
+                0.001
+        );
+    }
+
+
+    @Test
+    void debeRegistrarCargoYCalcularSaldoDelFolio() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-FOLIO-10",
+                apartamento,
+                crearHuesped("9601", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarCargoAlojamiento(
+                "R-FOLIO-10",
+                servicio
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-FOLIO-10", "P-10", 20000
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-FOLIO-10", "P-11", 22000
+        );
+
+        FolioServicio folio =
+                reservas.obtenerFolio("R-FOLIO-10");
+
+        assertEquals(42000.0, folio.obtenerPagosNetos(), 0.001);
+        assertEquals(3, folio.cantidadMovimientos());
+
+        // El saldo pendiente es el cargo menos los pagos.
+        assertEquals(
+                98000.0,
+                folio.obtenerSaldo(),
+                0.001
+        );
+    }
+
+    @Test
+    void noDebeRegistrarDosVecesElCargoAlojamiento() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-FOLIO-11",
+                apartamento,
+                crearHuesped("9602", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarCargoAlojamiento(
+                "R-FOLIO-11", servicio
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservas.registrarCargoAlojamiento(
+                        "R-FOLIO-11", servicio
+                )
+        );
+
+        FolioServicio folio =
+                reservas.obtenerFolio("R-FOLIO-11");
+
+        assertEquals(1, folio.cantidadMovimientos());
+        assertEquals(140000.0, folio.obtenerSaldo(), 0.001);
+    }
+
+
+    @Test
+    void debePermitirPagarSaldoDespuesDeConfirmar() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        Reserva reserva = reservas.registrarReserva(
+                "R-SALDO-01",
+                apartamento,
+                crearHuesped("9701", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarCargoAlojamiento(
+                "R-SALDO-01", servicio
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-SALDO-01", "ANT-01", 20000
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-SALDO-01", "ANT-02", 22000
+        );
+
+        reservas.confirmarReserva("R-SALDO-01", servicio);
+
+        assertEquals(EstadoReserva.CONFIRMADA, reserva.getEstado());
+
+        reservas.registrarPagoSaldo(
+                "R-SALDO-01", "SALDO-01", 40000
+        );
+
+        reservas.registrarPagoSaldo(
+                "R-SALDO-01", "SALDO-02", 58000
+        );
+
+        FolioServicio folio =
+                reservas.obtenerFolio("R-SALDO-01");
+
+        assertEquals(0.0, folio.obtenerSaldo(), 0.001);
+        assertEquals(140000.0, folio.obtenerPagosNetos(), 0.001);
+        assertEquals(5, folio.cantidadMovimientos());
+    }
+
+    @Test
+    void noDebePermitirPagoMayorAlSaldo() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-SALDO-02",
+                apartamento,
+                crearHuesped("9702", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarCargoAlojamiento(
+                "R-SALDO-02", servicio
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-SALDO-02", "ANT-03", 42000
+        );
+
+        reservas.confirmarReserva("R-SALDO-02", servicio);
+
+        FolioServicio folio =
+                reservas.obtenerFolio("R-SALDO-02");
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> reservas.registrarPagoSaldo(
+                        "R-SALDO-02", "SALDO-03", 100000
+                )
+        );
+
+        assertEquals(98000.0, folio.obtenerSaldo(), 0.001);
+        assertEquals(2, folio.cantidadMovimientos());
+    }
+
+    @Test
+    void noDebePagarSaldoSinCargoRegistrado() {
+
+        ReservaServicio reservas = new ReservaServicio();
+
+        reservas.registrarReserva(
+                "R-SALDO-03",
+                apartamento,
+                crearHuesped("9703", LocalDate.of(1995, 5, 10)),
+                LocalDate.of(2027, 3, 10),
+                LocalDate.of(2027, 3, 12),
+                CanalReserva.PORTAL
+        );
+
+        reservas.registrarAbonoPortal(
+                "R-SALDO-03", "ANT-04", 42000
+        );
+
+        reservas.confirmarReserva("R-SALDO-03", servicio);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> reservas.registrarPagoSaldo(
+                        "R-SALDO-03", "SALDO-04", 10000
+                )
+        );
+    }
+
 }

@@ -168,12 +168,34 @@
     <!-- Acciones económicas de la reserva seleccionada -->
     <HBox spacing="10">
 
-        <Button text="Cotizar reserva seleccionada"
+        <Button text="Cotizar reserva"
                 onAction="#cotizarSeleccionada"
                 style="-fx-background-color: #243447;
-                       -fx-text-fill: white;"/>
+                   -fx-text-fill: white;"/>
+
+        <Button text="Registrar pago"
+                onAction="#registrarPagoSeleccionada"
+                style="-fx-background-color: #28784B;
+                   -fx-text-fill: white;"/>
+
+        <Button text="Pagar saldo"
+                onAction="#pagarSaldoSeleccionada"
+                style="-fx-background-color: #28784B;
+               -fx-text-fill: white;"/>
+
+        <Button text="Confirmar reserva"
+                onAction="#confirmarSeleccionada"
+                style="-fx-background-color: #28784B;
+                   -fx-text-fill: white;"/>
+
+        <Button text="Registrar cargo"
+                onAction="#registrarCargoSeleccionada"/>
+
+        <Button text="Consultar folio"
+                onAction="#consultarFolioSeleccionada"/>
 
     </HBox>
+
 
     <Label fx:id="lblEstado"
            wrapText="true"
