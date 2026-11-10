@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.TurnoController"
+      spacing="14"
+      style="-fx-background-color: #F4F6F9;">
+
+    <padding>
+        <Insets top="25" right="25" bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Gestión de turnos"
+           style="-fx-font-size: 26px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #243447;"/>
+
+    <Label text="Programa y administra los turnos del personal."
+           style="-fx-font-size: 14px;"/>
+
+    <TitledPane text="Programar turno"
+                expanded="true"
+                collapsible="false">
+
+        <content>
+            <GridPane hgap="12" vgap="10">
+
+                <padding>
+                    <Insets top="14" right="14"
+                            bottom="14" left="14"/>
+                </padding>
+
+                <Label text="Código:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtCodigo"
+                           promptText="Código del turno"
+                           GridPane.rowIndex="0"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Empleado:"
+                       GridPane.rowIndex="0"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cmbEmpleado"
+                          promptText="Selecciona un empleado"
+                          maxWidth="Infinity"
+                          GridPane.rowIndex="0"
+                          GridPane.columnIndex="3"/>
+
+                <Label text="Fecha:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="0"/>
+
+                <DatePicker fx:id="dpFecha"
+                            promptText="Fecha del turno"
+                            maxWidth="Infinity"
+                            GridPane.rowIndex="1"
+                            GridPane.columnIndex="1"/>
+
+                <Label text="Tipo:"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="2"/>
+
+                <ComboBox fx:id="cmbTipo"
+                          promptText="Tipo de turno"
+                          maxWidth="Infinity"
+                          GridPane.rowIndex="1"
+                          GridPane.columnIndex="3"/>
+
+                <Label text="Hora inicio:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="0"/>
+
+                <TextField fx:id="txtHoraInicio"
+                           promptText="Ejemplo: 08:00"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="1"/>
+
+                <Label text="Hora fin:"
+                       GridPane.rowIndex="2"
+                       GridPane.columnIndex="2"/>
+
+                <TextField fx:id="txtHoraFin"
+                           promptText="Ejemplo: 16:00"
+                           GridPane.rowIndex="2"
+                           GridPane.columnIndex="3"/>
+
+                <HBox spacing="8"
+                      GridPane.rowIndex="3"
+                      GridPane.columnIndex="1"
+                      GridPane.columnSpan="3">
+
+                    <Button text="Programar turno"
+                            onAction="#registrarTurno"
+                            style="-fx-background-color: #243447;
+                                   -fx-text-fill: white;"/>
+
+                    <Button text="Limpiar"
+                            onAction="#limpiarFormulario"/>
+
+                </HBox>
+
+            </GridPane>
+        </content>
+    </TitledPane>
+
+    <Label text="Turnos registrados"
+           style="-fx-font-size: 19px;
+                  -fx-font-weight: bold;"/>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+
+        <TextField fx:id="txtBuscarCodigo"
+                   promptText="Buscar por código"
+                   HBox.hgrow="ALWAYS"/>
+
+        <Button text="Buscar turno"
+                onAction="#buscarTurno"/>
+
+        <Button text="Mostrar todos"
+                onAction="#mostrarTodos"/>
+
+    </HBox>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+
+        <TextField fx:id="txtBuscarDocumento"
+                   promptText="Documento del empleado"
+                   HBox.hgrow="ALWAYS"/>
+
+        <Button text="Consultar turnos del empleado"
+                onAction="#buscarTurnosEmpleado"/>
+
+        <Button text="Limpiar búsqueda"
+                onAction="#limpiarBusqueda"/>
+
+    </HBox>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+
+        <Button text="Completar turno"
+                onAction="#completarTurno"/>
+
+        <Button text="Cancelar turno"
+                onAction="#cancelarTurno"/>
+
+    </HBox>
+
+    <TableView fx:id="tablaTurnos"
+               prefHeight="260"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+
+            <TableColumn fx:id="colCodigo"
+                         text="Código"
+                         prefWidth="85"/>
+
+            <TableColumn fx:id="colEmpleado"
+                         text="Empleado"
+                         prefWidth="190"/>
+
+            <TableColumn fx:id="colFechaInicio"
+                         text="Fecha y hora inicio"
+                         prefWidth="145"/>
+
+            <TableColumn fx:id="colFechaFin"
+                         text="Fecha y hora fin"
+                         prefWidth="145"/>
+
+            <TableColumn fx:id="colTipo"
+                         text="Tipo"
+                         prefWidth="95"/>
+
+            <TableColumn fx:id="colEstado"
+                         text="Estado"
+                         prefWidth="100"/>
+
+        </columns>
+
+    </TableView>
+
+    <Label fx:id="lblEstado"
+           text="Selecciona una opción para comenzar."
+           wrapText="true"
+           style="-fx-text-fill: #455A64;"/>
+
+</VBox>

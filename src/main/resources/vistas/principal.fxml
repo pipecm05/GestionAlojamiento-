@@ -15,12 +15,14 @@
         prefHeight="700">
 
     <left>
+
         <VBox spacing="12"
               prefWidth="230"
               style="-fx-background-color: #243447;">
 
             <padding>
-                <Insets top="25" right="15" bottom="20" left="15"/>
+                <Insets top="25" right="15"
+                        bottom="20" left="15"/>
             </padding>
 
             <Label text="GESTIÓN DE ALOJAMIENTOS"
@@ -45,6 +47,10 @@
                     maxWidth="Infinity"
                     onAction="#mostrarEmpleados"/>
 
+            <Button text="Turnos"
+                    maxWidth="Infinity"
+                    onAction="#mostrarTurnos"/>
+
             <Button text="Reservas"
                     maxWidth="Infinity"
                     onAction="#mostrarReservas"/>
@@ -62,9 +68,11 @@
                     onAction="#mostrarReportes"/>
 
         </VBox>
+
     </left>
 
     <center>
+
         <VBox fx:id="contenidoCentral"
               spacing="20"
               style="-fx-background-color: #F4F6F9;">
@@ -85,6 +93,7 @@
                    wrapText="true"/>
 
         </VBox>
+
     </center>
 
 </BorderPane>

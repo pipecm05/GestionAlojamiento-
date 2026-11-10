@@ -5,6 +5,7 @@ import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.TurnoServicio;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -36,6 +37,9 @@ public class PrincipalController {
     private final EmpleadoServicio empleadoServicio =
             new EmpleadoServicio();
 
+    private final TurnoServicio turnoServicio =
+            new TurnoServicio();
+
     private Timeline verificadorVencimientos;
 
     @FXML
@@ -50,15 +54,10 @@ public class PrincipalController {
         iniciarVerificacionVencimientos();
     }
 
-    /**
-     * Inicia la revisión automática de las reservas vencidas.
-     */
     private void iniciarVerificacionVencimientos() {
 
-        // Revisar inmediatamente al iniciar la aplicación.
         verificarReservasVencidas();
 
-        // Revisar nuevamente cada minuto.
         verificadorVencimientos = new Timeline(
                 new KeyFrame(
                         Duration.minutes(1),
@@ -73,9 +72,6 @@ public class PrincipalController {
         verificadorVencimientos.play();
     }
 
-    /**
-     * Comprueba si existen reservas pendientes vencidas.
-     */
     private void verificarReservasVencidas() {
 
         try {
@@ -92,6 +88,7 @@ public class PrincipalController {
                 );
 
                 alerta.setTitle("Reservas vencidas");
+
                 alerta.setHeaderText(
                         "Se actualizaron las reservas automáticamente."
                 );
@@ -104,6 +101,7 @@ public class PrincipalController {
                 );
 
                 alerta.show();
+
             }
 
         } catch (RuntimeException ex) {
@@ -119,6 +117,7 @@ public class PrincipalController {
 
     @FXML
     private void mostrarInicio() {
+
         cambiarContenido(
                 "Panel principal",
                 "Sistema de Gestión de Alojamiento",
@@ -185,9 +184,6 @@ public class PrincipalController {
         }
     }
 
-    /**
-     * Abre el módulo de gestión de empleados.
-     */
     @FXML
     private void mostrarEmpleados() {
 
@@ -212,6 +208,38 @@ public class PrincipalController {
 
             mostrarError(
                     "No fue posible abrir la gestión de empleados.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
+    private void mostrarTurnos() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/turnos.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            TurnoController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    empleadoServicio,
+                    turnoServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException ex) {
+
+            mostrarError(
+                    "No fue posible abrir la gestión de turnos.",
                     ex
             );
         }
@@ -283,6 +311,35 @@ public class PrincipalController {
     }
 
     @FXML
+    private void mostrarTemporadas() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/temporadas.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            TemporadasController controlador =
+                    loader.getController();
+
+            controlador.configurar(tarifaServicio);
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException ex) {
+
+            mostrarError(
+                    "No fue posible abrir la configuración de temporadas.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
     private void mostrarReportes() {
 
         cambiarContenido(
@@ -340,35 +397,6 @@ public class PrincipalController {
         panelPrincipal.setCenter(contenido);
     }
 
-    @FXML
-    private void mostrarTemporadas() {
-
-        try {
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/vistas/temporadas.fxml"
-                    )
-            );
-
-            Parent vista = loader.load();
-
-            TemporadasController controlador =
-                    loader.getController();
-
-            controlador.configurar(tarifaServicio);
-
-            panelPrincipal.setCenter(vista);
-
-        } catch (IOException ex) {
-
-            mostrarError(
-                    "No fue posible abrir la configuración de temporadas.",
-                    ex
-            );
-        }
-    }
-
     private void mostrarError(
             String mensaje,
             Exception ex) {
@@ -380,6 +408,7 @@ public class PrincipalController {
         alerta.setTitle("Error de navegación");
         alerta.setHeaderText(mensaje);
         alerta.setContentText(ex.getMessage());
+
         alerta.showAndWait();
 
         ex.printStackTrace();
