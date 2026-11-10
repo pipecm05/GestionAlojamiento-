@@ -3,6 +3,7 @@ package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.FavoritoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TurnoServicio;
@@ -39,6 +40,9 @@ public class PrincipalController {
 
     private final TurnoServicio turnoServicio =
             new TurnoServicio();
+
+    private final FavoritoServicio favoritoServicio =
+            new FavoritoServicio();
 
     private Timeline verificadorVencimientos;
 
@@ -101,7 +105,6 @@ public class PrincipalController {
                 );
 
                 alerta.show();
-
             }
 
         } catch (RuntimeException ex) {
@@ -240,6 +243,38 @@ public class PrincipalController {
 
             mostrarError(
                     "No fue posible abrir la gestión de turnos.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
+    private void mostrarFavoritos() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/favoritos.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            FavoritosController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    favoritoServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException ex) {
+
+            mostrarError(
+                    "No fue posible abrir la gestión de favoritos.",
                     ex
             );
         }

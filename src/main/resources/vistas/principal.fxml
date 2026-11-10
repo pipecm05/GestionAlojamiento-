@@ -51,6 +51,10 @@
                     maxWidth="Infinity"
                     onAction="#mostrarTurnos"/>
 
+            <Button text="Favoritos"
+                    maxWidth="Infinity"
+                    onAction="#mostrarFavoritos"/>
+
             <Button text="Reservas"
                     maxWidth="Infinity"
                     onAction="#mostrarReservas"/>
