@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.datos.DatosPrueba;
@@ -6,6 +5,7 @@ import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.FavoritoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.RutaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TurnoServicio;
 
@@ -44,6 +44,9 @@ public class PrincipalController {
 
     private final FavoritoServicio favoritoServicio =
             new FavoritoServicio();
+
+    private final RutaServicio rutaServicio =
+            new RutaServicio();
 
     private Timeline verificadorVencimientos;
 
@@ -459,6 +462,41 @@ public class PrincipalController {
         }
     }
 
+    /**
+     * Abre el módulo del mapa y las rutas de los apartamentos.
+     */
+    @FXML
+    private void mostrarMapa() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/mapa.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            MapaController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    rutaServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir el mapa y la gestión de rutas.",
+                    ex
+            );
+        }
+    }
+
     private void cambiarContenido(
             String titulo,
             String subtitulo,
@@ -518,7 +556,11 @@ public class PrincipalController {
 
         alerta.setHeaderText(mensaje);
 
-        alerta.setContentText(ex.getMessage());
+        alerta.setContentText(
+                ex.getMessage() != null
+                        ? ex.getMessage()
+                        : "Ocurrió un error inesperado."
+        );
 
         alerta.showAndWait();
 

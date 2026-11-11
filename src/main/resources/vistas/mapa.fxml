@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.MapaController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background: #F4F6F9;">
+
+    <content>
+        <VBox spacing="18"
+              style="-fx-background-color: #F4F6F9;">
+
+            <padding>
+                <Insets top="25" right="25" bottom="25" left="25"/>
+            </padding>
+
+            <Label text="Mapa y gestión de rutas"
+                   style="-fx-font-size: 26px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <Label text="Visualiza las ubicaciones, sus conexiones y los recorridos del grafo."
+                   wrapText="true"/>
+
+            <TitledPane text="Mapa de ubicaciones"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <HBox spacing="15">
+                            <Label text="● Ubicación"
+                                   style="-fx-text-fill: #2878A8; -fx-font-weight: bold;"/>
+
+                            <Label text="● Ruta resaltada"
+                                   style="-fx-text-fill: #F4A340; -fx-font-weight: bold;"/>
+
+                            <Label text="— Conexión"
+                                   style="-fx-text-fill: #657786; -fx-font-weight: bold;"/>
+                        </HBox>
+
+                        <Pane fx:id="panelGrafo"
+                              prefWidth="900"
+                              prefHeight="430"
+                              minHeight="430"
+                              style="-fx-background-color: white;
+                                     -fx-border-color: #DCE3E9;
+                                     -fx-border-radius: 8;
+                                     -fx-background-radius: 8;"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="1. Registrar ubicaciones"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <TextField fx:id="txtCodigoUbicacion"
+                                   promptText="Código. Ej. RECEPCION"/>
+
+                        <Button text="Agregar ubicación"
+                                onAction="#agregarUbicacion"
+                                maxWidth="Infinity"/>
+
+                        <Label text="Ubicaciones registradas:"
+                               style="-fx-font-weight: bold;"/>
+
+                        <ListView fx:id="lvUbicaciones"
+                                  prefHeight="110"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="2. Conectar ubicaciones"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <Label text="Origen:"/>
+
+                        <ComboBox fx:id="cbOrigen"
+                                  promptText="Selecciona el origen"
+                                  maxWidth="Infinity"/>
+
+                        <Label text="Destino:"/>
+
+                        <ComboBox fx:id="cbDestino"
+                                  promptText="Selecciona el destino"
+                                  maxWidth="Infinity"/>
+
+                        <Label text="Distancia:"/>
+
+                        <TextField fx:id="txtDistancia"
+                                   promptText="Ej. 5.5"/>
+
+                        <Button text="Crear conexión"
+                                onAction="#conectarUbicaciones"
+                                maxWidth="Infinity"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="3. Ruta más corta - Dijkstra"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <Button text="Consultar ruta más corta"
+                                onAction="#consultarRuta"
+                                maxWidth="Infinity"
+                                style="-fx-background-color: #28784B;
+                                       -fx-text-fill: white;
+                                       -fx-font-weight: bold;"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="4. Recorridos BFS y DFS"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <Label text="Ubicación inicial:"/>
+
+                        <ComboBox fx:id="cbOrigenRecorrido"
+                                  promptText="Selecciona una ubicación"
+                                  maxWidth="Infinity"/>
+
+                        <Button text="Recorrer por anchura (BFS)"
+                                onAction="#recorrerBfs"
+                                maxWidth="Infinity"/>
+
+                        <Button text="Recorrer por profundidad (DFS)"
+                                onAction="#recorrerDfs"
+                                maxWidth="Infinity"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <Label text="Resultado"
+                   style="-fx-font-size: 18px;
+                          -fx-font-weight: bold;"/>
+
+            <ListView fx:id="lvResultadoRuta"
+                      prefHeight="130"/>
+
+            <Label fx:id="lblResultado"
+                   text="Registra ubicaciones para comenzar."
+                   wrapText="true"
+                   style="-fx-text-fill: #455A64;
+                          -fx-font-weight: bold;"/>
+
+        </VBox>
+    </content>
+</ScrollPane>

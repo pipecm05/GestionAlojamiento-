@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.gestionalojamiento.estructuras;
 
 import java.util.Iterator;
@@ -11,6 +12,7 @@ public class Grafo<T> implements Iterable<T> {
     }
 
     public boolean agregarVertice(T dato) {
+
         if (dato == null) {
             throw new IllegalArgumentException(
                     "El vértice no puede ser nulo.");
@@ -25,11 +27,13 @@ public class Grafo<T> implements Iterable<T> {
     }
 
     private VerticeGrafo<T> buscarVertice(T dato) {
+
         if (dato == null) {
             return null;
         }
 
         for (VerticeGrafo<T> vertice : vertices) {
+
             if (vertice.getDato().equals(dato)) {
                 return vertice;
             }
@@ -42,8 +46,26 @@ public class Grafo<T> implements Iterable<T> {
         return buscarVertice(dato) != null;
     }
 
+    /**
+     * Obtiene las conexiones directas de un vértice.
+     * Se utiliza para representar gráficamente el grafo.
+     */
+    public Iterable<AristaGrafo<T>> obtenerAdyacentes(T dato) {
+
+        VerticeGrafo<T> vertice = buscarVertice(dato);
+
+        if (vertice == null) {
+            throw new IllegalArgumentException(
+                    "El vértice no existe en el grafo.");
+        }
+
+        return vertice.getAdyacentes();
+    }
+
     public boolean agregarArista(
-            T origen, T destino, double peso) {
+            T origen,
+            T destino,
+            double peso) {
 
         if (!Double.isFinite(peso) || peso <= 0) {
             throw new IllegalArgumentException(
@@ -118,6 +140,7 @@ public class Grafo<T> implements Iterable<T> {
         };
     }
 
+    // RECORRIDO EN ANCHURA (BFS)
 
     public ListaDoble<T> bfs(T origen) {
 
@@ -132,19 +155,17 @@ public class Grafo<T> implements Iterable<T> {
         ListaDoble<VerticeGrafo<T>> visitados = new ListaDoble<>();
         Cola<VerticeGrafo<T>> pendientes = new Cola<>();
 
-        // Marcar el origen y agregarlo a la cola.
         visitados.agregar(inicio);
         pendientes.encolar(inicio);
 
         while (!pendientes.estaVacia()) {
 
-            // Procesar el primer vértice de la cola.
             VerticeGrafo<T> actual = pendientes.desencolar();
 
             recorrido.agregar(actual.getDato());
 
-            // Explorar sus vecinos.
-            for (AristaGrafo<T> arista : actual.getAdyacentes()) {
+            for (AristaGrafo<T> arista :
+                    actual.getAdyacentes()) {
 
                 VerticeGrafo<T> vecino = arista.getDestino();
 
@@ -163,6 +184,7 @@ public class Grafo<T> implements Iterable<T> {
             VerticeGrafo<T> vertice) {
 
         for (VerticeGrafo<T> visitado : visitados) {
+
             if (visitado == vertice) {
                 return true;
             }
@@ -171,6 +193,7 @@ public class Grafo<T> implements Iterable<T> {
         return false;
     }
 
+    // RECORRIDO EN PROFUNDIDAD (DFS)
 
     public ListaDoble<T> dfs(T origen) {
 
@@ -197,7 +220,8 @@ public class Grafo<T> implements Iterable<T> {
         visitados.agregar(actual);
         recorrido.agregar(actual.getDato());
 
-        for (AristaGrafo<T> arista : actual.getAdyacentes()) {
+        for (AristaGrafo<T> arista :
+                actual.getAdyacentes()) {
 
             VerticeGrafo<T> vecino = arista.getDestino();
 
@@ -207,8 +231,10 @@ public class Grafo<T> implements Iterable<T> {
         }
     }
 
+    // ALGORITMO DE DIJKSTRA
 
     private class EstadoRuta {
+
         VerticeGrafo<T> vertice;
         double distancia = Double.POSITIVE_INFINITY;
         EstadoRuta anterior;
@@ -224,6 +250,7 @@ public class Grafo<T> implements Iterable<T> {
             VerticeGrafo<T> vertice) {
 
         for (EstadoRuta estado : estados) {
+
             if (estado.vertice == vertice) {
                 return estado;
             }
@@ -238,9 +265,11 @@ public class Grafo<T> implements Iterable<T> {
         EstadoRuta menor = null;
 
         for (EstadoRuta estado : estados) {
+
             if (!estado.visitado
                     && (menor == null
                     || estado.distancia < menor.distancia)) {
+
                 menor = estado;
             }
         }
@@ -248,7 +277,9 @@ public class Grafo<T> implements Iterable<T> {
         return menor;
     }
 
-    private EstadoRuta calcularDijkstra(T origen, T destino) {
+    private EstadoRuta calcularDijkstra(
+            T origen,
+            T destino) {
 
         VerticeGrafo<T> inicio = buscarVertice(origen);
         VerticeGrafo<T> fin = buscarVertice(destino);
@@ -284,11 +315,13 @@ public class Grafo<T> implements Iterable<T> {
 
             actual.visitado = true;
 
-            for (AristaGrafo<T> arista
-                    : actual.vertice.getAdyacentes()) {
+            for (AristaGrafo<T> arista :
+                    actual.vertice.getAdyacentes()) {
 
                 EstadoRuta vecino = buscarEstado(
-                        estados, arista.getDestino());
+                        estados,
+                        arista.getDestino()
+                );
 
                 if (vecino.visitado) {
                     continue;
@@ -298,6 +331,7 @@ public class Grafo<T> implements Iterable<T> {
                         actual.distancia + arista.getPeso();
 
                 if (nuevaDistancia < vecino.distancia) {
+
                     vecino.distancia = nuevaDistancia;
                     vecino.anterior = actual;
                 }
@@ -307,9 +341,12 @@ public class Grafo<T> implements Iterable<T> {
         return objetivo;
     }
 
-    public ListaDoble<T> rutaMasCorta(T origen, T destino) {
+    public ListaDoble<T> rutaMasCorta(
+            T origen,
+            T destino) {
 
         EstadoRuta objetivo = calcularDijkstra(origen, destino);
+
         ListaDoble<T> ruta = new ListaDoble<>();
 
         if (Double.isInfinite(objetivo.distancia)) {
@@ -319,15 +356,19 @@ public class Grafo<T> implements Iterable<T> {
         EstadoRuta actual = objetivo;
 
         while (actual != null) {
+
             ruta.agregarAlInicio(actual.vertice.getDato());
+
             actual = actual.anterior;
         }
 
         return ruta;
     }
 
-    public double distanciaMinima(T origen, T destino) {
+    public double distanciaMinima(
+            T origen,
+            T destino) {
+
         return calcularDijkstra(origen, destino).distancia;
     }
-
 }

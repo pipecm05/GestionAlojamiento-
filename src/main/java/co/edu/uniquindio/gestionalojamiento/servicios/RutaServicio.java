@@ -1,5 +1,7 @@
+
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
+import co.edu.uniquindio.gestionalojamiento.estructuras.AristaGrafo;
 import co.edu.uniquindio.gestionalojamiento.estructuras.Grafo;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
@@ -18,6 +20,7 @@ public class RutaServicio {
     }
 
     public boolean agregarApartamento(Apartamento apartamento) {
+
         if (apartamento == null) {
             throw new IllegalArgumentException(
                     "El apartamento es obligatorio.");
@@ -27,7 +30,9 @@ public class RutaServicio {
     }
 
     public boolean conectarUbicaciones(
-            String origen, String destino, double distancia) {
+            String origen,
+            String destino,
+            double distancia) {
 
         validarCodigo(origen);
         validarCodigo(destino);
@@ -36,7 +41,8 @@ public class RutaServicio {
     }
 
     public ListaDoble<String> obtenerRutaMasCorta(
-            String origen, String destino) {
+            String origen,
+            String destino) {
 
         validarCodigo(origen);
         validarCodigo(destino);
@@ -45,7 +51,8 @@ public class RutaServicio {
     }
 
     public double obtenerDistanciaMinima(
-            String origen, String destino) {
+            String origen,
+            String destino) {
 
         validarCodigo(origen);
         validarCodigo(destino);
@@ -67,7 +74,19 @@ public class RutaServicio {
         return grafo.cantidadVertices();
     }
 
+    public Iterable<String> listarUbicaciones() {
+        return grafo;
+    }
+
+    public Iterable<AristaGrafo<String>> obtenerConexionesDesde(
+            String codigo) {
+
+        validarCodigo(codigo);
+        return grafo.obtenerAdyacentes(codigo);
+    }
+
     private void validarCodigo(String codigo) {
+
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException(
                     "El código de ubicación es obligatorio.");
