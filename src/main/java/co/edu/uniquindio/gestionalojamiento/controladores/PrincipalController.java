@@ -176,7 +176,7 @@ public class PrincipalController {
             AlojamientoController controlador =
                     loader.getController();
 
-            controlador.setCatalogo(catalogo);
+            controlador.configurar(catalogo, reservaServicio);
 
             panelPrincipal.setCenter(vista);
 

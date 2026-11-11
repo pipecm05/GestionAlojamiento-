@@ -4,155 +4,292 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.AlojamientoController"
-      spacing="14"
-      style="-fx-background-color: #F4F6F9;">
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.AlojamientoController"
+            fitToWidth="true"
+            fitToHeight="false"
+            pannable="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            style="-fx-background: #F4F6F9;">
 
-    <padding>
-        <Insets top="25" right="25" bottom="25" left="25"/>
-    </padding>
+    <content>
+        <VBox spacing="20"
+              fillWidth="true"
+              style="-fx-background-color: #F4F6F9;">
 
-    <Label text="Gestión de alojamientos"
-           style="-fx-font-size: 26px;
-                  -fx-font-weight: bold;
-                  -fx-text-fill: #243447;"/>
+            <padding>
+                <Insets top="25" right="28" bottom="30" left="28"/>
+            </padding>
 
-    <Label text="Registro y consulta de apartamentos y sus tarifas."/>
+            <!-- ENCABEZADO -->
+            <VBox spacing="6">
+                <Label text="Gestión de alojamientos"
+                       style="-fx-font-size: 27px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
 
-    <TitledPane text="Registrar apartamento"
-                collapsible="false">
+                <Label text="Administra los apartamentos, consulta su información y controla su disponibilidad."
+                       wrapText="true"
+                       style="-fx-font-size: 13px;
+                              -fx-text-fill: #64748B;"/>
+            </VBox>
 
-        <content>
-            <GridPane hgap="12" vgap="12">
+            <!-- REGISTRAR APARTAMENTO -->
+            <VBox spacing="15"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 10;
+                         -fx-border-color: #E2E8F0;
+                         -fx-border-radius: 10;">
+
                 <padding>
-                    <Insets top="15" right="15" bottom="15" left="15"/>
+                    <Insets top="18" right="20" bottom="20" left="20"/>
                 </padding>
 
-                <Label text="Código:"
-                       GridPane.rowIndex="0"
-                       GridPane.columnIndex="0"/>
+                <Label text="Registrar apartamento"
+                       style="-fx-font-size: 18px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
 
-                <TextField fx:id="txtCodigo"
-                           promptText="Ej. A101"
+                <GridPane hgap="15" vgap="13">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="18"/>
+                        <ColumnConstraints percentWidth="32"/>
+                        <ColumnConstraints percentWidth="18"/>
+                        <ColumnConstraints percentWidth="32"/>
+                    </columnConstraints>
+
+                    <Label text="Código:"
                            GridPane.rowIndex="0"
-                           GridPane.columnIndex="1"/>
+                           GridPane.columnIndex="0"/>
 
-                <Label text="Nombre:"
-                       GridPane.rowIndex="0"
-                       GridPane.columnIndex="2"/>
+                    <TextField fx:id="txtCodigo"
+                               promptText="Ej. A101"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="0"
+                               GridPane.columnIndex="1"/>
 
-                <TextField fx:id="txtNombre"
-                           promptText="Ej. Suite Jardín"
+                    <Label text="Nombre:"
                            GridPane.rowIndex="0"
-                           GridPane.columnIndex="3"/>
+                           GridPane.columnIndex="2"/>
 
-                <Label text="Capacidad máxima:"
-                       GridPane.rowIndex="1"
-                       GridPane.columnIndex="0"/>
+                    <TextField fx:id="txtNombre"
+                               promptText="Nombre del apartamento"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="0"
+                               GridPane.columnIndex="3"/>
 
-                <TextField fx:id="txtCapacidad"
-                           promptText="Ej. 4"
+                    <Label text="Capacidad:"
                            GridPane.rowIndex="1"
-                           GridPane.columnIndex="1"/>
+                           GridPane.columnIndex="0"/>
 
-                <Label text="Habitaciones:"
-                       GridPane.rowIndex="1"
-                       GridPane.columnIndex="2"/>
+                    <TextField fx:id="txtCapacidad"
+                               promptText="Ej. 4"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="1"
+                               GridPane.columnIndex="1"/>
 
-                <TextField fx:id="txtHabitaciones"
-                           promptText="Ej. 2"
+                    <Label text="Habitaciones:"
                            GridPane.rowIndex="1"
-                           GridPane.columnIndex="3"/>
+                           GridPane.columnIndex="2"/>
 
-                <Label text="Tarifa baja:"
-                       GridPane.rowIndex="2"
-                       GridPane.columnIndex="0"/>
+                    <TextField fx:id="txtHabitaciones"
+                               promptText="Ej. 2"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="1"
+                               GridPane.columnIndex="3"/>
 
-                <TextField fx:id="txtTarifaBaja"
-                           promptText="Ej. 50000"
+                    <Label text="Tarifa baja:"
                            GridPane.rowIndex="2"
-                           GridPane.columnIndex="1"/>
+                           GridPane.columnIndex="0"/>
 
-                <Label text="Tarifa media:"
-                       GridPane.rowIndex="2"
-                       GridPane.columnIndex="2"/>
+                    <TextField fx:id="txtTarifaBaja"
+                               promptText="Ej. 50000"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="2"
+                               GridPane.columnIndex="1"/>
 
-                <TextField fx:id="txtTarifaMedia"
-                           promptText="Ej. 70000"
+                    <Label text="Tarifa media:"
                            GridPane.rowIndex="2"
-                           GridPane.columnIndex="3"/>
+                           GridPane.columnIndex="2"/>
 
-                <Label text="Tarifa alta:"
-                       GridPane.rowIndex="3"
-                       GridPane.columnIndex="0"/>
+                    <TextField fx:id="txtTarifaMedia"
+                               promptText="Ej. 70000"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="2"
+                               GridPane.columnIndex="3"/>
 
-                <TextField fx:id="txtTarifaAlta"
-                           promptText="Ej. 90000"
+                    <Label text="Tarifa alta:"
                            GridPane.rowIndex="3"
-                           GridPane.columnIndex="1"/>
+                           GridPane.columnIndex="0"/>
 
-                <HBox spacing="10"
-                      GridPane.rowIndex="4"
-                      GridPane.columnIndex="1"
-                      GridPane.columnSpan="3">
+                    <TextField fx:id="txtTarifaAlta"
+                               promptText="Ej. 90000"
+                               maxWidth="Infinity"
+                               GridPane.rowIndex="3"
+                               GridPane.columnIndex="1"/>
 
-                    <Button text="Registrar apartamento"
-                            onAction="#registrarApartamento"
+                    <HBox spacing="10"
+                          alignment="CENTER_LEFT"
+                          GridPane.rowIndex="4"
+                          GridPane.columnIndex="1"
+                          GridPane.columnSpan="3">
+
+                        <Button text="Registrar apartamento"
+                                onAction="#registrarApartamento"
+                                style="-fx-background-color: #243447;
+                                       -fx-text-fill: white;
+                                       -fx-font-weight: bold;
+                                       -fx-background-radius: 6;
+                                       -fx-padding: 9 16;"/>
+
+                        <Button text="Limpiar"
+                                onAction="#limpiarFormulario"
+                                style="-fx-background-color: #E2E8F0;
+                                       -fx-text-fill: #334155;
+                                       -fx-background-radius: 6;
+                                       -fx-padding: 9 16;"/>
+                    </HBox>
+                </GridPane>
+            </VBox>
+
+            <!-- APARTAMENTOS REGISTRADOS -->
+            <VBox spacing="14"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 10;
+                         -fx-border-color: #E2E8F0;
+                         -fx-border-radius: 10;">
+
+                <padding>
+                    <Insets top="18" right="20" bottom="20" left="20"/>
+                </padding>
+
+                <Label text="Apartamentos registrados"
+                       style="-fx-font-size: 19px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="txtBuscar"
+                               promptText="Buscar por código del apartamento..."
+                               HBox.hgrow="ALWAYS"/>
+
+                    <Button text="Buscar"
+                            onAction="#buscarApartamento"
                             style="-fx-background-color: #243447;
-                                   -fx-text-fill: white;"/>
+                                   -fx-text-fill: white;
+                                   -fx-background-radius: 6;
+                                   -fx-padding: 8 16;"/>
 
-                    <Button text="Limpiar"
-                            onAction="#limpiarFormulario"/>
+                    <Button text="Mostrar todos"
+                            onAction="#mostrarTodos"
+                            style="-fx-background-color: #E2E8F0;
+                                   -fx-text-fill: #334155;
+                                   -fx-background-radius: 6;
+                                   -fx-padding: 8 16;"/>
                 </HBox>
-            </GridPane>
-        </content>
-    </TitledPane>
 
-    <Label text="Apartamentos registrados"
-           style="-fx-font-size: 19px;
-                  -fx-font-weight: bold;"/>
+                <TableView fx:id="tablaApartamentos"
+                           prefHeight="300"
+                           minHeight="250"
+                           maxHeight="360">
 
-    <HBox spacing="10">
-        <TextField fx:id="txtBuscar"
-                   promptText="Código del apartamento"
-                   HBox.hgrow="ALWAYS"/>
+                    <columns>
+                        <TableColumn fx:id="colCodigo"
+                                     text="Código"
+                                     prefWidth="85"/>
 
-        <Button text="Buscar"
-                onAction="#buscarApartamento"/>
+                        <TableColumn fx:id="colNombre"
+                                     text="Nombre"
+                                     prefWidth="145"/>
 
-        <Button text="Mostrar todos"
-                onAction="#mostrarTodos"/>
-    </HBox>
+                        <TableColumn fx:id="colCapacidad"
+                                     text="Capacidad"
+                                     prefWidth="90"/>
 
-    <TableView fx:id="tablaApartamentos"
-               prefHeight="300"
-               VBox.vgrow="ALWAYS">
+                        <TableColumn fx:id="colHabitaciones"
+                                     text="Habitaciones"
+                                     prefWidth="105"/>
 
-        <columns>
-            <TableColumn fx:id="colCodigo"
-                         text="Código" prefWidth="80"/>
-            <TableColumn fx:id="colNombre"
-                         text="Nombre" prefWidth="140"/>
-            <TableColumn fx:id="colCapacidad"
-                         text="Capacidad" prefWidth="80"/>
-            <TableColumn fx:id="colHabitaciones"
-                         text="Habitaciones" prefWidth="95"/>
-            <TableColumn fx:id="colEstado"
-                         text="Estado" prefWidth="145"/>
-            <TableColumn fx:id="colTarifaBaja"
-                         text="Baja" prefWidth="90"/>
-            <TableColumn fx:id="colTarifaMedia"
-                         text="Media" prefWidth="90"/>
-            <TableColumn fx:id="colTarifaAlta"
-                         text="Alta" prefWidth="90"/>
-        </columns>
-    </TableView>
+                        <TableColumn fx:id="colEstado"
+                                     text="Estado"
+                                     prefWidth="150"/>
 
-    <Label fx:id="lblEstado"
-           text="Lista para registrar apartamentos."
-           wrapText="true"
-           style="-fx-text-fill: #455A64;"/>
+                        <TableColumn fx:id="colTarifaBaja"
+                                     text="Baja"
+                                     prefWidth="95"/>
 
-</VBox>
+                        <TableColumn fx:id="colTarifaMedia"
+                                     text="Media"
+                                     prefWidth="95"/>
+
+                        <TableColumn fx:id="colTarifaAlta"
+                                     text="Alta"
+                                     prefWidth="95"/>
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <!-- MANTENIMIENTO Y DISPONIBILIDAD -->
+            <VBox spacing="14"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 10;
+                         -fx-border-color: #E2E8F0;
+                         -fx-border-radius: 10;">
+
+                <padding>
+                    <Insets top="18" right="20" bottom="20" left="20"/>
+                </padding>
+
+                <Label text="Mantenimiento y disponibilidad"
+                       style="-fx-font-size: 19px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <Label text="Selecciona un apartamento de la tabla para cambiar su estado operativo."
+                       wrapText="true"
+                       style="-fx-text-fill: #64748B;"/>
+
+                <VBox spacing="7">
+                    <Label text="Motivo de mantenimiento"
+                           style="-fx-font-weight: bold;
+                                  -fx-text-fill: #334155;"/>
+
+                    <TextField fx:id="txtMotivoFueraServicio"
+                               promptText="Ej. Reparación, mantenimiento, daños..."
+                               maxWidth="Infinity"/>
+                </VBox>
+
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Button text="Marcar fuera de servicio"
+                            onAction="#marcarFueraDeServicio"
+                            style="-fx-background-color: #C65D16;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;
+                                   -fx-background-radius: 6;
+                                   -fx-padding: 10 16;"/>
+
+                    <Button text="Habilitar apartamento"
+                            onAction="#habilitarApartamento"
+                            style="-fx-background-color: #15803D;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;
+                                   -fx-background-radius: 6;
+                                   -fx-padding: 10 16;"/>
+                </HBox>
+            </VBox>
+
+            <!-- MENSAJE -->
+            <Label fx:id="lblEstado"
+                   text="Lista para registrar apartamentos."
+                   wrapText="true"
+                   maxWidth="Infinity"
+                   style="-fx-background-color: #E8EEF5;
+                          -fx-background-radius: 7;
+                          -fx-padding: 12;
+                          -fx-text-fill: #334155;"/>
+
+        </VBox>
+    </content>
+</ScrollPane>
