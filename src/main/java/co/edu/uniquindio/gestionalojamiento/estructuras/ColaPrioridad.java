@@ -1,14 +1,14 @@
-
 package co.edu.uniquindio.gestionalojamiento.estructuras;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class ColaPrioridad<T> {
+public class ColaPrioridad<T> implements Iterable<T> {
 
     private T[] elementos;
     private int tamanio;
-    private Comparator<T> comparador;
+    private final Comparator<T> comparador;
 
     @SuppressWarnings("unchecked")
     public ColaPrioridad(int capacidadInicial, Comparator<T> comparador) {
@@ -78,7 +78,6 @@ public class ColaPrioridad<T> {
         }
 
         elementos[tamanio] = null;
-
         return resultado;
     }
 
@@ -146,5 +145,38 @@ public class ColaPrioridad<T> {
 
             elementos = nuevos;
         }
+    }
+
+    /**
+     * Recorre los elementos en orden de prioridad sin modificar
+     * la cola original. La iteración utiliza una copia temporal.
+     */
+    @Override
+    public Iterator<T> iterator() {
+        final ColaPrioridad<T> copia =
+                new ColaPrioridad<>(Math.max(1, tamanio), comparador);
+
+        for (int i = 0; i < tamanio; i++) {
+            copia.insertar(elementos[i]);
+        }
+
+        return new Iterator<T>() {
+
+            @Override
+            public boolean hasNext() {
+                return !copia.estaVacia();
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException(
+                            "No hay más elementos en la cola de prioridad."
+                    );
+                }
+
+                return copia.extraerPrioridad();
+            }
+        };
     }
 }

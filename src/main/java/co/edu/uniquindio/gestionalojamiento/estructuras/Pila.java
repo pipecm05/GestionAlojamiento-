@@ -1,9 +1,9 @@
-
 package co.edu.uniquindio.gestionalojamiento.estructuras;
 
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class Pila<T> {
+public class Pila<T> implements Iterable<T> {
 
     private Nodo<T> cima;
     private int tamanio;
@@ -29,7 +29,6 @@ public class Pila<T> {
         }
 
         Nodo<T> nuevo = new Nodo<>(dato);
-
         nuevo.setSiguiente(cima);
 
         if (cima != null) {
@@ -71,5 +70,35 @@ public class Pila<T> {
     public void vaciar() {
         cima = null;
         tamanio = 0;
+    }
+
+    /**
+     * Recorre la pila desde la cima hasta el fondo, respetando
+     * el orden LIFO sin modificar la pila original.
+     */
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+
+            private Nodo<T> actual = cima;
+
+            @Override
+            public boolean hasNext() {
+                return actual != null;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException(
+                            "No hay más elementos en la pila."
+                    );
+                }
+
+                T dato = actual.getDato();
+                actual = actual.getSiguiente();
+                return dato;
+            }
+        };
     }
 }
