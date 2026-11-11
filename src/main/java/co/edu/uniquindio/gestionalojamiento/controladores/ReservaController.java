@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
@@ -128,7 +129,6 @@ public class ReservaController {
         );
     }
 
-
     public void configurar(
             CatalogoAlojamiento catalogo,
             ReservaServicio reservaServicio,
@@ -148,7 +148,6 @@ public class ReservaController {
 
         actualizarDatos();
     }
-
 
     @FXML
     private void actualizarDatos() {
@@ -695,6 +694,149 @@ public class ReservaController {
                 "Grupo limpio. Puedes comenzar una nueva reserva.");
     }
 
+    // -----------------------------------------------------------------
+    // CHECK-IN
+    // -----------------------------------------------------------------
+
+    @FXML
+    private void checkInSeleccionada() {
+
+        if (reservaServicio == null) {
+            error("El servicio de reservas no está configurado.");
+            return;
+        }
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva de la tabla.");
+            return;
+        }
+
+        try {
+            if (reserva.getEstado() != EstadoReserva.CONFIRMADA) {
+                throw new IllegalStateException(
+                        "Solo se puede realizar el check-in "
+                                + "de una reserva CONFIRMADA.");
+            }
+
+            Alert confirmacion = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "¿Deseas realizar el check-in de la reserva "
+                            + reserva.getCodigo() + "?\n"
+                            + "Apartamento: "
+                            + reserva.getApartamento().getCodigo(),
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            confirmacion.setTitle("Confirmar check-in");
+            confirmacion.setHeaderText("Entrada del huésped");
+
+            if (confirmacion.showAndWait()
+                    .orElse(ButtonType.NO) != ButtonType.YES) {
+                return;
+            }
+
+            String codigo = reserva.getCodigo();
+
+            reservaServicio.registrarCheckIn(codigo);
+
+            mostrarTodas();
+
+            lblEstado.setText(
+                    "Check-in realizado correctamente: " + codigo
+            );
+
+            informar(
+                    "Check-in realizado",
+                    "La reserva " + codigo
+                            + " pasó a estado EN_CURSO.\n"
+                            + "El apartamento pasó a estado OCUPADO."
+            );
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // CHECK-OUT
+    // -----------------------------------------------------------------
+
+    @FXML
+    private void checkOutSeleccionada() {
+
+        if (reservaServicio == null) {
+            error("El servicio de reservas no está configurado.");
+            return;
+        }
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            error("Selecciona una reserva de la tabla.");
+            return;
+        }
+
+        try {
+            if (reserva.getEstado() != EstadoReserva.EN_CURSO) {
+                throw new IllegalStateException(
+                        "Solo se puede realizar el check-out "
+                                + "de una reserva EN_CURSO.");
+            }
+
+            Alert confirmacion = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "¿Deseas realizar el check-out de la reserva "
+                            + reserva.getCodigo() + "?\n"
+                            + "Apartamento: "
+                            + reserva.getApartamento().getCodigo(),
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            confirmacion.setTitle("Confirmar check-out");
+            confirmacion.setHeaderText("Salida del huésped");
+
+            if (confirmacion.showAndWait()
+                    .orElse(ButtonType.NO) != ButtonType.YES) {
+                return;
+            }
+
+            String codigo = reserva.getCodigo();
+
+            reservaServicio.registrarCheckOut(codigo);
+
+            mostrarTodas();
+
+            lblEstado.setText(
+                    "Check-out realizado correctamente: " + codigo
+            );
+
+            informar(
+                    "Check-out realizado",
+                    "La reserva " + codigo
+                            + " pasó a estado FINALIZADA.\n"
+                            + "El apartamento quedó PENDIENTE_PREPARACION "
+                            + "y fue agregado a la cola de preparación."
+            );
+
+        } catch (IllegalArgumentException
+                 | IllegalStateException ex) {
+
+            error(ex.getMessage());
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // MENSAJES
+    // -----------------------------------------------------------------
+
     private void error(String mensaje) {
         Alert alerta = new Alert(Alert.AlertType.ERROR);
         alerta.setTitle("Error");
@@ -711,7 +853,6 @@ public class ReservaController {
         alerta.setContentText(mensaje);
         alerta.showAndWait();
     }
-
 
     @FXML
     private void cotizarSeleccionada() {
@@ -798,7 +939,6 @@ public class ReservaController {
             error(ex.getMessage());
         }
     }
-
 
     @FXML
     private void registrarPagoSeleccionada() {
@@ -933,7 +1073,6 @@ public class ReservaController {
         }
     }
 
-
     @FXML
     private void confirmarSeleccionada() {
 
@@ -941,7 +1080,7 @@ public class ReservaController {
                 tablaReservas.getSelectionModel().getSelectedItem();
 
         if (reserva == null) {
-            error("Selecciona una reserva en la tabla.");
+            error("Selecciona una reserva de la tabla.");
             return;
         }
 
@@ -1000,8 +1139,6 @@ public class ReservaController {
         }
     }
 
-
-
     @FXML
     private void consultarFolioSeleccionada() {
 
@@ -1014,7 +1151,7 @@ public class ReservaController {
                 tablaReservas.getSelectionModel().getSelectedItem();
 
         if (reserva == null) {
-            error("Selecciona una reserva en la tabla.");
+            error("Selecciona una reserva de la tabla.");
             return;
         }
 
@@ -1096,7 +1233,7 @@ public class ReservaController {
                 tablaReservas.getSelectionModel().getSelectedItem();
 
         if (reserva == null) {
-            error("Selecciona una reserva en la tabla.");
+            error("Selecciona una reserva de la tabla.");
             return;
         }
 
@@ -1119,7 +1256,6 @@ public class ReservaController {
             error(ex.getMessage());
         }
     }
-
 
     @FXML
     private void pagarSaldoSeleccionada() {
@@ -1228,5 +1364,4 @@ public class ReservaController {
             error(ex.getMessage());
         }
     }
-
 }

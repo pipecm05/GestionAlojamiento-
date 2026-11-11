@@ -1,6 +1,6 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
-import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.PreparacionServicio;
@@ -21,8 +21,6 @@ public class PreparacionController {
     private CatalogoAlojamiento catalogo;
     private ReservaServicio reservaServicio;
     private PreparacionServicio preparacionServicio;
-
-    private Apartamento apartamentoEnPreparacion;
 
     @FXML
     private TableView<Apartamento> tablaApartamentos;
@@ -145,25 +143,28 @@ public class PreparacionController {
             );
         }
 
-        if (apartamentoEnPreparacion == null) {
+        Apartamento activo =
+                preparacionServicio.getApartamentoEnPreparacion();
+
+        if (activo == null) {
             lblEnPreparacion.setText(
                     "En preparación: ninguno"
             );
         } else {
             lblEnPreparacion.setText(
                     "En preparación: "
-                            + apartamentoEnPreparacion.getCodigo()
+                            + activo.getCodigo()
+                            + " - "
+                            + activo.getNombre()
             );
         }
 
         btnIniciar.setDisable(
-                apartamentoEnPreparacion != null
+                activo != null
                         || !preparacionServicio.hayApartamentosPendientes()
         );
 
-        btnFinalizar.setDisable(
-                apartamentoEnPreparacion == null
-        );
+        btnFinalizar.setDisable(activo == null);
     }
 
     @FXML
@@ -171,17 +172,8 @@ public class PreparacionController {
 
         try {
 
-            if (apartamentoEnPreparacion != null) {
-                mostrarAlerta(
-                        Alert.AlertType.WARNING,
-                        "Preparación en curso",
-                        "Ya existe un apartamento en preparación."
-                );
-                return;
-            }
-
             Apartamento siguiente =
-                    preparacionServicio.obtenerSiguiente();
+                    preparacionServicio.iniciarSiguientePreparacion();
 
             if (siguiente == null) {
                 mostrarAlerta(
@@ -189,13 +181,10 @@ public class PreparacionController {
                         "Cola vacía",
                         "No hay apartamentos pendientes de preparación."
                 );
+
                 actualizarTabla();
                 return;
             }
-
-            preparacionServicio.iniciarPreparacion(siguiente);
-
-            apartamentoEnPreparacion = siguiente;
 
             actualizarTabla();
 
@@ -224,22 +213,23 @@ public class PreparacionController {
 
         try {
 
-            if (apartamentoEnPreparacion == null) {
+            Apartamento activo =
+                    preparacionServicio.getApartamentoEnPreparacion();
+
+            if (activo == null) {
                 mostrarAlerta(
                         Alert.AlertType.WARNING,
                         "Sin preparación activa",
                         "No hay ningún apartamento en preparación."
                 );
+
+                actualizarTabla();
                 return;
             }
 
-            String codigo = apartamentoEnPreparacion.getCodigo();
+            String codigo = activo.getCodigo();
 
-            preparacionServicio.finalizarPreparacion(
-                    apartamentoEnPreparacion
-            );
-
-            apartamentoEnPreparacion = null;
+            preparacionServicio.finalizarPreparacion();
 
             actualizarTabla();
 
