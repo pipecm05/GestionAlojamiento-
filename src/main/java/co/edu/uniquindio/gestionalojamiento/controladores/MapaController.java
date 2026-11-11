@@ -573,11 +573,6 @@ public class MapaController {
 
         Collections.sort(ubicaciones);
 
-        double ancho = Math.max(panelGrafo.getWidth(), 850);
-        double alto = Math.max(panelGrafo.getHeight(), 480);
-
-        panelGrafo.setPrefSize(ancho, alto);
-
         if (ubicaciones.isEmpty()) {
 
             Text mensaje = new Text(
@@ -592,8 +587,30 @@ public class MapaController {
             return;
         }
 
+        double ancho = Math.max(panelGrafo.getWidth(), 1000);
+
         Map<String, double[]> posiciones =
-                calcularPosiciones(ubicaciones, ancho, alto);
+                calcularPosiciones(
+                        ubicaciones,
+                        ancho,
+                        panelGrafo.getHeight()
+                );
+
+        double alturaNecesaria = 430;
+
+        for (double[] posicion : posiciones.values()) {
+            alturaNecesaria = Math.max(
+                    alturaNecesaria,
+                    posicion[1] + 90
+            );
+        }
+
+        double alto = Math.max(
+                panelGrafo.getHeight(),
+                alturaNecesaria
+        );
+
+        panelGrafo.setPrefSize(ancho, alto);
 
         dibujarConexiones(ubicaciones, posiciones);
         dibujarNodos(ubicaciones, posiciones);
@@ -607,41 +624,40 @@ public class MapaController {
         Map<String, double[]> posiciones = new HashMap<>();
 
         double centroX = ancho / 2;
-        double inicioY = 65;
-        double separacionY = 105;
 
         posiciones.put(
                 RECEPCION,
-                new double[]{centroX, inicioY}
+                new double[]{centroX, 45}
         );
 
         posiciones.put(
                 PASILLO_CENTRAL,
-                new double[]{centroX, inicioY + separacionY}
+                new double[]{centroX, 145}
         );
 
         posiciones.put(
                 ESCALERA_A,
-                new double[]{centroX - 250, inicioY + separacionY * 2}
+                new double[]{centroX - 220, 255}
         );
 
         posiciones.put(
                 ESCALERA_B,
-                new double[]{centroX + 250, inicioY + separacionY * 2}
+                new double[]{centroX + 220, 255}
         );
 
         posiciones.put(
                 ASEO_A,
-                new double[]{centroX - 390, inicioY + separacionY}
+                new double[]{centroX - 390, 145}
         );
 
         posiciones.put(
                 ASEO_B,
-                new double[]{centroX + 390, inicioY + separacionY}
+                new double[]{centroX + 390, 145}
         );
 
-        int indiceA = 0;
-        int indiceB = 0;
+        List<String> apartamentosA = new ArrayList<>();
+        List<String> apartamentosB = new ArrayList<>();
+        List<String> otros = new ArrayList<>();
 
         for (String codigo : ubicaciones) {
 
@@ -649,34 +665,84 @@ public class MapaController {
                 continue;
             }
 
-            boolean grupoA = indiceA <= indiceB;
+            boolean conectadoA = false;
+            boolean conectadoB = false;
 
-            if (grupoA) {
+            for (AristaGrafo<String> arista :
+                    rutaServicio.obtenerConexionesDesde(ESCALERA_A)) {
 
-                posiciones.put(
-                        codigo,
-                        new double[]{
-                                centroX - 250 + (indiceA % 3) * 100,
-                                inicioY + separacionY * 3
-                                        + (indiceA / 3) * 100
-                        }
-                );
-
-                indiceA++;
-
-            } else {
-
-                posiciones.put(
-                        codigo,
-                        new double[]{
-                                centroX + 50 + (indiceB % 3) * 100,
-                                inicioY + separacionY * 3
-                                        + (indiceB / 3) * 100
-                        }
-                );
-
-                indiceB++;
+                if (arista.getDestino().getDato().equals(codigo)) {
+                    conectadoA = true;
+                    break;
+                }
             }
+
+            for (AristaGrafo<String> arista :
+                    rutaServicio.obtenerConexionesDesde(ESCALERA_B)) {
+
+                if (arista.getDestino().getDato().equals(codigo)) {
+                    conectadoB = true;
+                    break;
+                }
+            }
+
+            if (conectadoA) {
+                apartamentosA.add(codigo);
+            } else if (conectadoB) {
+                apartamentosB.add(codigo);
+            } else {
+                otros.add(codigo);
+            }
+        }
+
+        Collections.sort(apartamentosA);
+        Collections.sort(apartamentosB);
+        Collections.sort(otros);
+
+        int columnas = 3;
+        double separacionX = 105;
+        double separacionY = 110;
+
+        for (int i = 0; i < apartamentosA.size(); i++) {
+
+            int columna = i % columnas;
+            int fila = i / columnas;
+
+            double x = centroX - 320 + columna * separacionX;
+            double y = 370 + fila * separacionY;
+
+            posiciones.put(
+                    apartamentosA.get(i),
+                    new double[]{x, y}
+            );
+        }
+
+        for (int i = 0; i < apartamentosB.size(); i++) {
+
+            int columna = i % columnas;
+            int fila = i / columnas;
+
+            double x = centroX + 110 + columna * separacionX;
+            double y = 370 + fila * separacionY;
+
+            posiciones.put(
+                    apartamentosB.get(i),
+                    new double[]{x, y}
+            );
+        }
+
+        for (int i = 0; i < otros.size(); i++) {
+
+            int columna = i % columnas;
+            int fila = i / columnas;
+
+            double x = centroX - 105 + columna * separacionX;
+            double y = 370 + fila * separacionY;
+
+            posiciones.put(
+                    otros.get(i),
+                    new double[]{x, y}
+            );
         }
 
         return posiciones;
@@ -766,6 +832,10 @@ public class MapaController {
 
             double[] posicion = posiciones.get(codigo);
 
+            if (posicion == null) {
+                continue;
+            }
+
             boolean resaltado =
                     rutaResaltada.contains(codigo)
                             || nodosResaltados.contains(codigo);
@@ -789,21 +859,32 @@ public class MapaController {
             Circle nodo = new Circle(
                     posicion[0],
                     posicion[1],
-                    27
+                    29
             );
 
             nodo.setFill(color);
             nodo.setStroke(Color.WHITE);
             nodo.setStrokeWidth(3);
 
-            Text etiqueta = new Text(
-                    posicion[0] - codigo.length() * 3.5,
-                    posicion[1] + 4,
-                    codigo
-            );
+            String etiquetaTexto = codigo;
+
+            if (codigo.equals(ESCALERA_A)) {
+                etiquetaTexto = "ESC. A";
+            } else if (codigo.equals(ESCALERA_B)) {
+                etiquetaTexto = "ESC. B";
+            }
+
+            Text etiqueta = new Text(etiquetaTexto);
 
             etiqueta.setFill(Color.WHITE);
-            etiqueta.setFont(Font.font(11));
+            etiqueta.setFont(Font.font(10));
+
+            etiqueta.setX(
+                    posicion[0]
+                            - etiqueta.getLayoutBounds().getWidth() / 2
+            );
+
+            etiqueta.setY(posicion[1] + 4);
 
             panelGrafo.getChildren().addAll(nodo, etiqueta);
         }
