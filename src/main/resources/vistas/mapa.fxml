@@ -25,7 +25,7 @@
                           -fx-font-weight: bold;
                           -fx-text-fill: #243447;"/>
 
-            <Label text="Visualiza las ubicaciones, sus conexiones y los recorridos del grafo."
+            <Label text="Visualiza las ubicaciones, sus conexiones y los recorridos del complejo."
                    wrapText="true"/>
 
             <TitledPane text="Mapa de ubicaciones"
@@ -33,26 +33,32 @@
                         expanded="true">
 
                 <content>
-                    <VBox spacing="10">
+                    <VBox spacing="12">
                         <padding>
                             <Insets top="12" right="12" bottom="12" left="12"/>
                         </padding>
 
-                        <HBox spacing="15">
-                            <Label text="● Ubicación"
+                        <FlowPane hgap="18" vgap="10">
+                            <Label text="● Recepción"
+                                   style="-fx-text-fill: #16845B; -fx-font-weight: bold;"/>
+
+                            <Label text="● Apartamentos"
                                    style="-fx-text-fill: #2878A8; -fx-font-weight: bold;"/>
 
-                            <Label text="● Ruta resaltada"
-                                   style="-fx-text-fill: #F4A340; -fx-font-weight: bold;"/>
+                            <Label text="● Escaleras"
+                                   style="-fx-text-fill: #7C3AED; -fx-font-weight: bold;"/>
 
-                            <Label text="— Conexión"
-                                   style="-fx-text-fill: #657786; -fx-font-weight: bold;"/>
-                        </HBox>
+                            <Label text="● Zonas de aseo"
+                                   style="-fx-text-fill: #0891B2; -fx-font-weight: bold;"/>
+
+                            <Label text="● Ruta resaltada"
+                                   style="-fx-text-fill: #F59E0B; -fx-font-weight: bold;"/>
+                        </FlowPane>
 
                         <Pane fx:id="panelGrafo"
                               prefWidth="900"
-                              prefHeight="430"
-                              minHeight="430"
+                              prefHeight="480"
+                              minHeight="480"
                               style="-fx-background-color: white;
                                      -fx-border-color: #DCE3E9;
                                      -fx-border-radius: 8;
@@ -61,7 +67,7 @@
                 </content>
             </TitledPane>
 
-            <TitledPane text="1. Registrar ubicaciones"
+            <TitledPane text="Escenario de prueba"
                         collapsible="false"
                         expanded="true">
 
@@ -71,12 +77,42 @@
                             <Insets top="12" right="12" bottom="12" left="12"/>
                         </padding>
 
-                        <TextField fx:id="txtCodigoUbicacion"
-                                   promptText="Código. Ej. RECEPCION"/>
+                        <Label text="Carga una distribución de ejemplo con recepción, pasillos, escaleras, zonas de aseo y los apartamentos del catálogo."
+                               wrapText="true"/>
 
-                        <Button text="Agregar ubicación"
+                        <Button text="Cargar escenario de prueba"
+                                onAction="#cargarEscenarioPrueba"
+                                maxWidth="Infinity"
+                                style="-fx-background-color: #16845B;
+                                       -fx-text-fill: white;
+                                       -fx-font-weight: bold;"/>
+                    </VBox>
+                </content>
+            </TitledPane>
+
+            <TitledPane text="1. Agregar apartamentos existentes"
+                        collapsible="false"
+                        expanded="true">
+
+                <content>
+                    <VBox spacing="10">
+                        <padding>
+                            <Insets top="12" right="12" bottom="12" left="12"/>
+                        </padding>
+
+                        <Label text="Selecciona un apartamento que ya esté registrado en el catálogo:"
+                               wrapText="true"/>
+
+                        <ComboBox fx:id="cbApartamentoDisponible"
+                                  promptText="Selecciona un apartamento"
+                                  maxWidth="Infinity"/>
+
+                        <Button text="Agregar apartamento al mapa"
                                 onAction="#agregarUbicacion"
-                                maxWidth="Infinity"/>
+                                maxWidth="Infinity"
+                                style="-fx-background-color: #2878A8;
+                                       -fx-text-fill: white;
+                                       -fx-font-weight: bold;"/>
 
                         <Label text="Ubicaciones registradas:"
                                style="-fx-font-weight: bold;"/>
@@ -109,7 +145,7 @@
                                   promptText="Selecciona el destino"
                                   maxWidth="Infinity"/>
 
-                        <Label text="Distancia:"/>
+                        <Label text="Distancia en metros:"/>
 
                         <TextField fx:id="txtDistancia"
                                    promptText="Ej. 5.5"/>
@@ -131,10 +167,13 @@
                             <Insets top="12" right="12" bottom="12" left="12"/>
                         </padding>
 
+                        <Label text="Selecciona el origen y el destino en la sección de conexiones. Después consulta la ruta más corta."
+                               wrapText="true"/>
+
                         <Button text="Consultar ruta más corta"
                                 onAction="#consultarRuta"
                                 maxWidth="Infinity"
-                                style="-fx-background-color: #28784B;
+                                style="-fx-background-color: #D97706;
                                        -fx-text-fill: white;
                                        -fx-font-weight: bold;"/>
                     </VBox>
@@ -151,7 +190,8 @@
                             <Insets top="12" right="12" bottom="12" left="12"/>
                         </padding>
 
-                        <Label text="Ubicación inicial:"/>
+                        <Label text="Selecciona una ubicación inicial. Los recorridos visitarán todos los nodos alcanzables desde ella."
+                               wrapText="true"/>
 
                         <ComboBox fx:id="cbOrigenRecorrido"
                                   promptText="Selecciona una ubicación"
@@ -173,10 +213,10 @@
                           -fx-font-weight: bold;"/>
 
             <ListView fx:id="lvResultadoRuta"
-                      prefHeight="130"/>
+                      prefHeight="150"/>
 
             <Label fx:id="lblResultado"
-                   text="Registra ubicaciones para comenzar."
+                   text="Carga el escenario de prueba para comenzar."
                    wrapText="true"
                    style="-fx-text-fill: #455A64;
                           -fx-font-weight: bold;"/>

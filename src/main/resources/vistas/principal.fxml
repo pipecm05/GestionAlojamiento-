@@ -151,7 +151,7 @@
                     onAction="#mostrarMapa"
                     maxWidth="Infinity"
                     style="-fx-background-color: #EAF0F6;
-                           -fx-text-fill: #1565C0;
+                           -fx-text-fill: rgba(0,0,0,0.56);
                            -fx-font-weight: bold;
                            -fx-font-size: 14px;
                            -fx-alignment: CENTER_LEFT;"/>

@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.estructuras.AristaGrafo;
@@ -31,8 +32,15 @@ import java.util.Set;
 
 public class MapaController {
 
+    private static final String RECEPCION = "RECEPCION";
+    private static final String PASILLO_CENTRAL = "PASILLO";
+    private static final String ESCALERA_A = "ESCALERA_A";
+    private static final String ESCALERA_B = "ESCALERA_B";
+    private static final String ASEO_A = "ASEO_A";
+    private static final String ASEO_B = "ASEO_B";
+
     @FXML
-    private TextField txtCodigoUbicacion;
+    private ComboBox<String> cbApartamentoDisponible;
 
     @FXML
     private TextField txtDistancia;
@@ -76,7 +84,7 @@ public class MapaController {
         );
 
         lblResultado.setText(
-                "Registra ubicaciones y crea conexiones para visualizar el mapa."
+                "Selecciona alojamientos del catálogo para agregarlos al mapa."
         );
     }
 
@@ -93,19 +101,54 @@ public class MapaController {
         this.catalogo = catalogo;
         this.rutaServicio = rutaServicio;
 
-        cargarApartamentos();
         actualizarUbicaciones();
+        actualizarApartamentosDisponibles();
 
         Platform.runLater(this::dibujarGrafo);
     }
 
-    private void cargarApartamentos() {
+    /*
+     * AGREGAR ALOJAMIENTOS EXISTENTES
+     */
 
-        for (Apartamento apartamento :
-                catalogo.listarApartamentos()) {
+    private void actualizarApartamentosDisponibles() {
 
-            rutaServicio.agregarApartamento(apartamento);
+        if (catalogo == null || rutaServicio == null) {
+            return;
         }
+
+        List<String> disponibles = new ArrayList<>();
+
+        for (Apartamento apartamento : catalogo.listarApartamentos()) {
+
+            String codigo = apartamento.getCodigo();
+
+            if (!estaRegistrado(codigo)) {
+                disponibles.add(codigo);
+            }
+        }
+
+        Collections.sort(disponibles);
+
+        cbApartamentoDisponible.setItems(
+                FXCollections.observableArrayList(disponibles)
+        );
+
+        if (!disponibles.isEmpty()) {
+            cbApartamentoDisponible.getSelectionModel().selectFirst();
+        }
+    }
+
+    private boolean estaRegistrado(String codigo) {
+
+        for (String ubicacion : rutaServicio.listarUbicaciones()) {
+
+            if (ubicacion.equals(codigo)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @FXML
@@ -113,39 +156,164 @@ public class MapaController {
 
         try {
 
-            String codigo =
-                    txtCodigoUbicacion.getText().trim();
+            String codigo = cbApartamentoDisponible.getValue();
 
-            if (codigo.isBlank()) {
+            if (codigo == null) {
                 mostrarInformacion(
-                        "Ingresa el código de la ubicación."
+                        "No hay apartamentos disponibles para agregar. "
+                                + "Primero registra alojamientos en el catálogo."
                 );
                 return;
             }
 
-            boolean agregada =
-                    rutaServicio.agregarUbicacion(codigo);
+            Apartamento apartamentoEncontrado = null;
 
-            if (!agregada) {
-                mostrarInformacion(
-                        "La ubicación ya está registrada."
+            for (Apartamento apartamento : catalogo.listarApartamentos()) {
+
+                if (apartamento.getCodigo().equals(codigo)) {
+                    apartamentoEncontrado = apartamento;
+                    break;
+                }
+            }
+
+            if (apartamentoEncontrado == null) {
+                mostrarError(
+                        "El apartamento seleccionado ya no existe en el catálogo."
                 );
+                actualizarApartamentosDisponibles();
                 return;
             }
 
-            txtCodigoUbicacion.clear();
+            boolean agregado =
+                    rutaServicio.agregarApartamento(apartamentoEncontrado);
+
+            if (!agregado) {
+                mostrarInformacion(
+                        "Este apartamento ya está registrado en el mapa."
+                );
+                actualizarApartamentosDisponibles();
+                return;
+            }
 
             limpiarResaltado();
             actualizarUbicaciones();
+            actualizarApartamentosDisponibles();
 
             lblResultado.setText(
-                    "Ubicación agregada: " + codigo
+                    "Apartamento agregado al mapa: " + codigo
             );
 
         } catch (RuntimeException ex) {
             mostrarError(ex.getMessage());
         }
     }
+
+    /*
+     * ESCENARIO DE PRUEBA
+     */
+
+    @FXML
+    private void cargarEscenarioPrueba() {
+
+        try {
+
+            agregarSiNoExiste(RECEPCION);
+            agregarSiNoExiste(PASILLO_CENTRAL);
+            agregarSiNoExiste(ESCALERA_A);
+            agregarSiNoExiste(ESCALERA_B);
+            agregarSiNoExiste(ASEO_A);
+            agregarSiNoExiste(ASEO_B);
+
+            conectarSiEsPosible(RECEPCION, PASILLO_CENTRAL, 3);
+            conectarSiEsPosible(PASILLO_CENTRAL, ESCALERA_A, 5);
+            conectarSiEsPosible(PASILLO_CENTRAL, ESCALERA_B, 5);
+            conectarSiEsPosible(PASILLO_CENTRAL, ASEO_A, 4);
+            conectarSiEsPosible(PASILLO_CENTRAL, ASEO_B, 4);
+
+            List<String> apartamentos = obtenerCodigosApartamentos();
+
+            Collections.sort(apartamentos);
+
+            int contador = 0;
+
+            for (String codigo : apartamentos) {
+
+                agregarSiNoExiste(codigo);
+
+                if (contador % 2 == 0) {
+                    conectarSiEsPosible(ESCALERA_A, codigo, 3);
+                } else {
+                    conectarSiEsPosible(ESCALERA_B, codigo, 3);
+                }
+
+                contador++;
+            }
+
+            limpiarResaltado();
+            actualizarUbicaciones();
+            actualizarApartamentosDisponibles();
+
+            lblResultado.setText(
+                    "Escenario de prueba cargado. "
+                            + "Se agregaron los apartamentos existentes "
+                            + "y los puntos de servicio."
+            );
+
+        } catch (RuntimeException ex) {
+            mostrarError(ex.getMessage());
+        }
+    }
+
+    private List<String> obtenerCodigosApartamentos() {
+
+        List<String> codigos = new ArrayList<>();
+
+        for (Apartamento apartamento : catalogo.listarApartamentos()) {
+            codigos.add(apartamento.getCodigo());
+        }
+
+        return codigos;
+    }
+
+    private void agregarSiNoExiste(String codigo) {
+
+        if (!estaRegistrado(codigo)) {
+            rutaServicio.agregarUbicacion(codigo);
+        }
+    }
+
+    private void conectarSiEsPosible(
+            String origen,
+            String destino,
+            double distancia) {
+
+        if (origen == null || destino == null || origen.equals(destino)) {
+            return;
+        }
+
+        boolean existe = false;
+
+        for (AristaGrafo<String> arista :
+                rutaServicio.obtenerConexionesDesde(origen)) {
+
+            if (arista.getDestino().getDato().equals(destino)) {
+                existe = true;
+                break;
+            }
+        }
+
+        if (!existe) {
+            rutaServicio.conectarUbicaciones(
+                    origen,
+                    destino,
+                    distancia
+            );
+        }
+    }
+
+    /*
+     * CONEXIONES
+     */
 
     @FXML
     private void conectarUbicaciones() {
@@ -162,6 +330,13 @@ public class MapaController {
                 return;
             }
 
+            if (origen.equals(destino)) {
+                mostrarInformacion(
+                        "No puedes conectar una ubicación consigo misma."
+                );
+                return;
+            }
+
             if (txtDistancia.getText().isBlank()) {
                 mostrarInformacion(
                         "Ingresa la distancia de la conexión."
@@ -174,6 +349,13 @@ public class MapaController {
                             .trim()
                             .replace(",", ".")
             );
+
+            if (distancia <= 0) {
+                mostrarInformacion(
+                        "La distancia debe ser mayor que cero."
+                );
+                return;
+            }
 
             boolean conectadas =
                     rutaServicio.conectarUbicaciones(
@@ -196,7 +378,7 @@ public class MapaController {
             lblResultado.setText(
                     "Conexión creada: " + origen
                             + " - " + destino
-                            + " (" + distancia + ")"
+                            + " (" + distancia + " metros)"
             );
 
         } catch (NumberFormatException ex) {
@@ -208,6 +390,10 @@ public class MapaController {
         }
     }
 
+    /*
+     * DIJKSTRA
+     */
+
     @FXML
     private void consultarRuta() {
 
@@ -218,20 +404,15 @@ public class MapaController {
 
             if (origen == null || destino == null) {
                 mostrarInformacion(
-                        "Selecciona el origen y el destino."
+                        "Selecciona el origen y el destino en la sección de conexiones."
                 );
                 return;
             }
 
             ListaDoble<String> ruta =
-                    rutaServicio.obtenerRutaMasCorta(
-                            origen,
-                            destino
-                    );
+                    rutaServicio.obtenerRutaMasCorta(origen, destino);
 
-            lvResultadoRuta.getItems().clear();
-            rutaResaltada.clear();
-            nodosResaltados.clear();
+            limpiarResaltado();
 
             if (ruta.estaVacia()) {
 
@@ -261,7 +442,7 @@ public class MapaController {
                     "Ruta más corta: "
                             + String.join(" → ", rutaResaltada)
                             + " | Distancia total: "
-                            + distancia
+                            + distancia + " metros"
             );
 
         } catch (RuntimeException ex) {
@@ -269,15 +450,17 @@ public class MapaController {
         }
     }
 
+    /*
+     * BFS Y DFS
+     */
+
     @FXML
     private void recorrerBfs() {
-
         ejecutarRecorrido(true);
     }
 
     @FXML
     private void recorrerDfs() {
-
         ejecutarRecorrido(false);
     }
 
@@ -307,7 +490,6 @@ public class MapaController {
             for (String ubicacion : recorrido) {
 
                 nodosResaltados.add(ubicacion);
-
                 lvResultadoRuta.getItems().add(ubicacion);
             }
 
@@ -315,8 +497,10 @@ public class MapaController {
 
             lblResultado.setText(
                     (anchura ? "Recorrido BFS: " : "Recorrido DFS: ")
-                            + String.join(" → ",
-                            lvResultadoRuta.getItems())
+                            + String.join(
+                            " → ",
+                            lvResultadoRuta.getItems()
+                    )
             );
 
         } catch (RuntimeException ex) {
@@ -328,9 +512,12 @@ public class MapaController {
 
         rutaResaltada.clear();
         nodosResaltados.clear();
-
         lvResultadoRuta.getItems().clear();
     }
+
+    /*
+     * ACTUALIZAR INTERFAZ
+     */
 
     @FXML
     private void actualizarUbicaciones() {
@@ -366,6 +553,10 @@ public class MapaController {
         dibujarGrafo();
     }
 
+    /*
+     * DIBUJO DEL GRAFO
+     */
+
     private void dibujarGrafo() {
 
         if (panelGrafo == null || rutaServicio == null) {
@@ -383,7 +574,7 @@ public class MapaController {
         Collections.sort(ubicaciones);
 
         double ancho = Math.max(panelGrafo.getWidth(), 850);
-        double alto = Math.max(panelGrafo.getHeight(), 430);
+        double alto = Math.max(panelGrafo.getHeight(), 480);
 
         panelGrafo.setPrefSize(ancho, alto);
 
@@ -391,7 +582,7 @@ public class MapaController {
 
             Text mensaje = new Text(
                     30, 45,
-                    "No hay ubicaciones registradas. Agrega una para comenzar."
+                    "No hay ubicaciones registradas."
             );
 
             mensaje.setFont(Font.font(16));
@@ -416,26 +607,76 @@ public class MapaController {
         Map<String, double[]> posiciones = new HashMap<>();
 
         double centroX = ancho / 2;
-        double centroY = alto / 2;
+        double inicioY = 65;
+        double separacionY = 105;
 
-        double radioX = Math.max(100, ancho * 0.36);
-        double radioY = Math.max(90, alto * 0.34);
+        posiciones.put(
+                RECEPCION,
+                new double[]{centroX, inicioY}
+        );
 
-        int cantidad = ubicaciones.size();
+        posiciones.put(
+                PASILLO_CENTRAL,
+                new double[]{centroX, inicioY + separacionY}
+        );
 
-        for (int i = 0; i < cantidad; i++) {
+        posiciones.put(
+                ESCALERA_A,
+                new double[]{centroX - 250, inicioY + separacionY * 2}
+        );
 
-            double angulo =
-                    (2 * Math.PI * i / cantidad)
-                            - Math.PI / 2;
+        posiciones.put(
+                ESCALERA_B,
+                new double[]{centroX + 250, inicioY + separacionY * 2}
+        );
 
-            double x = centroX + radioX * Math.cos(angulo);
-            double y = centroY + radioY * Math.sin(angulo);
+        posiciones.put(
+                ASEO_A,
+                new double[]{centroX - 390, inicioY + separacionY}
+        );
 
-            posiciones.put(
-                    ubicaciones.get(i),
-                    new double[]{x, y}
-            );
+        posiciones.put(
+                ASEO_B,
+                new double[]{centroX + 390, inicioY + separacionY}
+        );
+
+        int indiceA = 0;
+        int indiceB = 0;
+
+        for (String codigo : ubicaciones) {
+
+            if (posiciones.containsKey(codigo)) {
+                continue;
+            }
+
+            boolean grupoA = indiceA <= indiceB;
+
+            if (grupoA) {
+
+                posiciones.put(
+                        codigo,
+                        new double[]{
+                                centroX - 250 + (indiceA % 3) * 100,
+                                inicioY + separacionY * 3
+                                        + (indiceA / 3) * 100
+                        }
+                );
+
+                indiceA++;
+
+            } else {
+
+                posiciones.put(
+                        codigo,
+                        new double[]{
+                                centroX + 50 + (indiceB % 3) * 100,
+                                inicioY + separacionY * 3
+                                        + (indiceB / 3) * 100
+                        }
+                );
+
+                indiceB++;
+            }
         }
 
         return posiciones;
@@ -447,14 +688,11 @@ public class MapaController {
 
         for (String origen : ubicaciones) {
 
-            Iterable<AristaGrafo<String>> conexiones =
-                    rutaServicio.obtenerConexionesDesde(origen);
-
-            for (AristaGrafo<String> arista : conexiones) {
+            for (AristaGrafo<String> arista :
+                    rutaServicio.obtenerConexionesDesde(origen)) {
 
                 String destino = arista.getDestino().getDato();
 
-                // Evita dibujar dos veces las conexiones bidireccionales.
                 if (origen.compareTo(destino) >= 0) {
                     continue;
                 }
@@ -478,7 +716,7 @@ public class MapaController {
 
                 linea.setStroke(
                         perteneceRuta
-                                ? Color.FORESTGREEN
+                                ? Color.web("#F59E0B")
                                 : Color.web("#9AA7B2")
                 );
 
@@ -488,15 +726,9 @@ public class MapaController {
 
                 panelGrafo.getChildren().add(linea);
 
-                double mitadX =
-                        (puntoOrigen[0] + puntoDestino[0]) / 2;
-
-                double mitadY =
-                        (puntoOrigen[1] + puntoDestino[1]) / 2;
-
                 Text peso = new Text(
-                        mitadX + 5,
-                        mitadY - 5,
+                        (puntoOrigen[0] + puntoDestino[0]) / 2 + 5,
+                        (puntoOrigen[1] + puntoDestino[1]) / 2 - 5,
                         String.valueOf(arista.getPeso())
                 );
 
@@ -538,18 +770,29 @@ public class MapaController {
                     rutaResaltada.contains(codigo)
                             || nodosResaltados.contains(codigo);
 
+            Color color;
+
+            if (resaltado) {
+                color = Color.web("#F59E0B");
+            } else if (codigo.equals(RECEPCION)) {
+                color = Color.web("#16845B");
+            } else if (codigo.startsWith("ESCALERA")) {
+                color = Color.web("#7C3AED");
+            } else if (codigo.startsWith("ASEO")) {
+                color = Color.web("#0891B2");
+            } else if (codigo.equals(PASILLO_CENTRAL)) {
+                color = Color.web("#64748B");
+            } else {
+                color = Color.web("#2878A8");
+            }
+
             Circle nodo = new Circle(
                     posicion[0],
                     posicion[1],
                     27
             );
 
-            nodo.setFill(
-                    resaltado
-                            ? Color.web("#F4A340")
-                            : Color.web("#2878A8")
-            );
-
+            nodo.setFill(color);
             nodo.setStroke(Color.WHITE);
             nodo.setStrokeWidth(3);
 
@@ -566,11 +809,13 @@ public class MapaController {
         }
     }
 
+    /*
+     * MENSAJES
+     */
+
     private void mostrarInformacion(String mensaje) {
 
-        Alert alerta = new Alert(
-                Alert.AlertType.INFORMATION
-        );
+        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
 
         alerta.setTitle("Información");
         alerta.setHeaderText("Mapa y rutas");
@@ -580,9 +825,7 @@ public class MapaController {
 
     private void mostrarError(String mensaje) {
 
-        Alert alerta = new Alert(
-                Alert.AlertType.ERROR
-        );
+        Alert alerta = new Alert(Alert.AlertType.ERROR);
 
         alerta.setTitle("Error");
         alerta.setHeaderText(
