@@ -562,6 +562,40 @@ public class PrincipalController {
         }
     }
 
+    // NUEVO: abrir el portal del huésped
+    @FXML
+    private void mostrarPortalHuesped() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/portal-huesped.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            PortalHuespedController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    reservaServicio,
+                    favoritoServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir el portal del huésped.",
+                    ex
+            );
+        }
+    }
+
     private void cambiarContenido(
             String titulo,
             String subtitulo,

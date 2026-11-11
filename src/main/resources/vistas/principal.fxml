@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -41,155 +42,176 @@
     </top>
 
     <left>
-        <VBox
-                spacing="8.0"
+        <ScrollPane
                 prefWidth="230.0"
-                style="-fx-background-color: #FFFFFF;">
+                fitToWidth="true"
+                hbarPolicy="NEVER"
+                vbarPolicy="AS_NEEDED"
+                style="-fx-background-color: white;
+                       -fx-background: white;
+                       -fx-border-color: transparent;">
 
-            <padding>
-                <Insets top="20.0" right="12.0" bottom="20.0" left="12.0"/>
-            </padding>
+            <content>
+                <VBox
+                        spacing="8.0"
+                        prefWidth="210.0"
+                        style="-fx-background-color: white;">
 
-            <Label
-                    text="MENÚ PRINCIPAL"
-                    style="-fx-font-size: 13px;
-                           -fx-font-weight: bold;
-                           -fx-text-fill: #78909C;"/>
+                    <padding>
+                        <Insets top="20.0" right="12.0" bottom="20.0" left="12.0"/>
+                    </padding>
 
-            <Button
-                    text="Inicio"
-                    onAction="#mostrarInicio"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: #EAF0F6;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Label
+                            text="MENÚ PRINCIPAL"
+                            style="-fx-font-size: 13px;
+                                   -fx-font-weight: bold;
+                                   -fx-text-fill: #78909C;"/>
 
-            <Button
-                    text="Alojamientos"
-                    onAction="#mostrarAlojamientos"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Inicio"
+                            onAction="#mostrarInicio"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: #EAF0F6;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Huéspedes"
-                    onAction="#mostrarHuespedes"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Alojamientos"
+                            onAction="#mostrarAlojamientos"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Empleados"
-                    onAction="#mostrarEmpleados"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Huéspedes"
+                            onAction="#mostrarHuespedes"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Turnos"
-                    onAction="#mostrarTurnos"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Empleados"
+                            onAction="#mostrarEmpleados"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Favoritos"
-                    onAction="#mostrarFavoritos"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Turnos"
+                            onAction="#mostrarTurnos"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Reservas"
-                    onAction="#mostrarReservas"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Favoritos"
+                            onAction="#mostrarFavoritos"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Canal externo"
-                    onAction="#mostrarCanalExterno"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: #EAF0F6;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Reservas"
+                            onAction="#mostrarReservas"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Calendario de ocupación"
-                    onAction="#mostrarCalendario"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: #EAF0F6;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Portal del huésped"
+                            onAction="#mostrarPortalHuesped"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: #E3F2FD;
+                                   -fx-text-fill: #1565C0;
+                                   -fx-font-weight: bold;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Folio"
-                    onAction="#mostrarFolio"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Canal externo"
+                            onAction="#mostrarCanalExterno"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: #EAF0F6;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Preparación"
-                    onAction="#mostrarPreparacion"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Calendario de ocupación"
+                            onAction="#mostrarCalendario"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: #EAF0F6;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Temporadas"
-                    onAction="#mostrarTemporadas"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Folio"
+                            onAction="#mostrarFolio"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Mapa y rutas"
-                    onAction="#mostrarMapa"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: #EAF0F6;
-                           -fx-text-fill: rgba(0,0,0,0.56);
-                           -fx-font-weight: bold;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Preparación"
+                            onAction="#mostrarPreparacion"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Button
-                    text="Reportes"
-                    onAction="#mostrarReportes"
-                    maxWidth="Infinity"
-                    style="-fx-background-color: transparent;
-                           -fx-text-fill: #243447;
-                           -fx-font-size: 14px;
-                           -fx-alignment: CENTER_LEFT;"/>
+                    <Button
+                            text="Temporadas"
+                            onAction="#mostrarTemporadas"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <VBox VBox.vgrow="ALWAYS"/>
+                    <Button
+                            text="Mapa y rutas"
+                            onAction="#mostrarMapa"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: #EAF0F6;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-weight: bold;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
 
-            <Label
-                    text="Sistema de Gestión"
-                    style="-fx-font-size: 11px;
-                           -fx-text-fill: #90A4AE;"/>
-        </VBox>
+                    <Button
+                            text="Reportes"
+                            onAction="#mostrarReportes"
+                            maxWidth="Infinity"
+                            style="-fx-background-color: transparent;
+                                   -fx-text-fill: #243447;
+                                   -fx-font-size: 14px;
+                                   -fx-alignment: CENTER_LEFT;"/>
+
+                    <Label
+                            text="Sistema de Gestión"
+                            style="-fx-font-size: 11px;
+                                   -fx-text-fill: #90A4AE;"/>
+
+                </VBox>
+            </content>
+        </ScrollPane>
     </left>
 
     <center>

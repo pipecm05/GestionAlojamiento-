@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane
+        xmlns="http://javafx.com/javafx/21"
+        xmlns:fx="http://javafx.com/fxml/1"
+        fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.PortalHuespedController"
+        fitToWidth="true"
+        hbarPolicy="NEVER"
+        vbarPolicy="AS_NEEDED"
+        style="-fx-background-color: #F4F6F9;">
+
+    <content>
+        <VBox spacing="18.0"
+              style="-fx-background-color: #F4F6F9;">
+
+            <padding>
+                <Insets top="25" right="25" bottom="30" left="25"/>
+            </padding>
+
+            <Label text="PORTAL DEL HUÉSPED"
+                   style="-fx-font-size: 26px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <Label fx:id="lblBienvenida"
+                   text="Selecciona tu perfil para comenzar."
+                   style="-fx-font-size: 16px;
+                          -fx-text-fill: #455A64;"/>
+
+            <VBox spacing="8">
+                <Label text="Seleccionar huésped"
+                       style="-fx-font-weight: bold;"/>
+
+                <ComboBox fx:id="cmbHuesped"
+                          promptText="Selecciona tu perfil"
+                          prefWidth="400"
+                          maxWidth="Infinity"/>
+            </VBox>
+
+            <Separator/>
+
+            <Label text="BUSCAR ALOJAMIENTOS"
+                   style="-fx-font-size: 18px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <HBox spacing="15" alignment="CENTER_LEFT">
+
+                <VBox spacing="6">
+                    <Label text="Fecha de entrada"/>
+                    <DatePicker fx:id="dpEntrada"
+                                prefWidth="170"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Fecha de salida"/>
+                    <DatePicker fx:id="dpSalida"
+                                prefWidth="170"/>
+                </VBox>
+
+                <VBox spacing="6">
+                    <Label text="Cantidad de personas"/>
+                    <Spinner fx:id="spPersonas"
+                             prefWidth="110"/>
+                </VBox>
+
+                <Button text="Buscar disponibilidad"
+                        onAction="#buscarAlojamientos"
+                        style="-fx-background-color: #243447;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;"/>
+            </HBox>
+
+            <Label fx:id="lblResultado"
+                   text="Selecciona las fechas para consultar los apartamentos."
+                   style="-fx-text-fill: #546E7A;"/>
+
+            <TableView fx:id="tablaAlojamientos"
+                       prefHeight="220">
+
+                <columns>
+                    <TableColumn fx:id="colCodigoAlojamiento"
+                                 text="Código"
+                                 prefWidth="100"/>
+
+                    <TableColumn fx:id="colNombreAlojamiento"
+                                 text="Apartamento"
+                                 prefWidth="180"/>
+
+                    <TableColumn fx:id="colCapacidad"
+                                 text="Capacidad"
+                                 prefWidth="100"/>
+
+                    <TableColumn fx:id="colHabitaciones"
+                                 text="Habitaciones"
+                                 prefWidth="110"/>
+
+                    <TableColumn fx:id="colTarifa"
+                                 text="Tarifa base por persona"
+                                 prefWidth="160"/>
+                </columns>
+            </TableView>
+
+            <HBox spacing="12">
+                <Button text="Solicitar reserva"
+                        onAction="#solicitarReserva"
+                        style="-fx-background-color: #2E7D32;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;"/>
+
+                <Button text="Agregar a favoritos"
+                        onAction="#agregarFavorito"
+                        style="-fx-background-color: #E3F2FD;
+                               -fx-text-fill: #1565C0;
+                               -fx-font-weight: bold;"/>
+            </HBox>
+
+            <Separator/>
+
+            <Label text="MIS RESERVAS"
+                   style="-fx-font-size: 18px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <TableView fx:id="tablaReservas"
+                       prefHeight="200">
+
+                <columns>
+                    <TableColumn fx:id="colCodigoReserva"
+                                 text="Código"
+                                 prefWidth="130"/>
+
+                    <TableColumn fx:id="colApartamentoReserva"
+                                 text="Apartamento"
+                                 prefWidth="180"/>
+
+                    <TableColumn fx:id="colFechasReserva"
+                                 text="Fechas"
+                                 prefWidth="220"/>
+
+                    <TableColumn fx:id="colEstadoReserva"
+                                 text="Estado"
+                                 prefWidth="120"/>
+                </columns>
+            </TableView>
+
+            <Separator/>
+
+            <Label text="MIS FAVORITOS"
+                   style="-fx-font-size: 18px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <TableView fx:id="tablaFavoritos"
+                       prefHeight="180">
+
+                <columns>
+                    <TableColumn fx:id="colCodigoFavorito"
+                                 text="Código"
+                                 prefWidth="130"/>
+
+                    <TableColumn fx:id="colNombreFavorito"
+                                 text="Apartamento"
+                                 prefWidth="200"/>
+
+                    <TableColumn fx:id="colCapacidadFavorito"
+                                 text="Capacidad"
+                                 prefWidth="130"/>
+                </columns>
+            </TableView>
+
+            <Button text="Eliminar de favoritos"
+                    onAction="#eliminarFavorito"
+                    style="-fx-background-color: #FFEBEE;
+                           -fx-text-fill: #C62828;
+                           -fx-font-weight: bold;"
+                    maxWidth="220"/>
+
+        </VBox>
+    </content>
+</ScrollPane>
