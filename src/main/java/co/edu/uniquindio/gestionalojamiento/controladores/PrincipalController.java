@@ -314,6 +314,35 @@ public class PrincipalController {
     }
 
     @FXML
+    private void mostrarFolio() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/folio.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            FolioController controlador =
+                    loader.getController();
+
+            controlador.configurar(reservaServicio);
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir la gestión del folio.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
     private void mostrarPreparacion() {
 
         try {
@@ -462,7 +491,9 @@ public class PrincipalController {
         );
 
         alerta.setTitle("Error de navegación");
+
         alerta.setHeaderText(mensaje);
+
         alerta.setContentText(ex.getMessage());
 
         alerta.showAndWait();
