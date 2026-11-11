@@ -1,16 +1,26 @@
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
+import co.edu.uniquindio.gestionalojamiento.estructuras.Conjunto;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.Alojamiento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Favorito;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 
+/**
+ * Gestiona los alojamientos favoritos de cada huésped.
+ *
+ * La lista conserva los objetos Favorito y su orden de registro. El conjunto
+ * mantiene las claves huésped-alojamiento para consultar y evitar duplicados
+ * mediante una estructura de conjunto propia del proyecto.
+ */
 public class FavoritoServicio {
 
     private final ListaDoble<Favorito> favoritos;
+    private final Conjunto<ClaveFavorito> clavesFavoritos;
 
     public FavoritoServicio() {
         favoritos = new ListaDoble<>();
+        clavesFavoritos = new Conjunto<>();
     }
 
     /**
@@ -32,14 +42,16 @@ public class FavoritoServicio {
             );
         }
 
-        if (esFavorito(huesped.getDocumento(),
-                alojamiento.getCodigo())) {
+        ClaveFavorito clave = crearClave(
+                huesped.getDocumento(),
+                alojamiento.getCodigo()
+        );
+
+        if (!clavesFavoritos.agregar(clave)) {
             return false;
         }
 
-        Favorito favorito = new Favorito(huesped, alojamiento);
-        favoritos.agregar(favorito);
-
+        favoritos.agregar(new Favorito(huesped, alojamiento));
         return true;
     }
 
@@ -64,70 +76,53 @@ public class FavoritoServicio {
     }
 
     /**
-     * Comprueba si un alojamiento está guardado
-     * como favorito por un huésped.
+     * Comprueba si un alojamiento está guardado como favorito por un huésped.
      */
     public boolean esFavorito(
             String documentoHuesped,
             String codigoAlojamiento
     ) {
-        validarDocumento(documentoHuesped);
-
-        if (codigoAlojamiento == null
-                || codigoAlojamiento.isBlank()) {
-            throw new IllegalArgumentException(
-                    "El código del alojamiento es obligatorio."
-            );
-        }
-
-        for (Favorito favorito : favoritos) {
-            boolean mismoHuesped =
-                    favorito.getHuesped().getDocumento()
-                            .equals(documentoHuesped);
-
-            boolean mismoAlojamiento =
-                    favorito.getAlojamiento().getCodigo()
-                            .equals(codigoAlojamiento);
-
-            if (mismoHuesped && mismoAlojamiento) {
-                return true;
-            }
-        }
-
-        return false;
+        return clavesFavoritos.contiene(
+                crearClave(documentoHuesped, codigoAlojamiento)
+        );
     }
 
     /**
-     * Elimina un alojamiento de los favoritos
-     * de un huésped.
+     * Elimina un alojamiento de los favoritos de un huésped.
      */
     public boolean eliminarFavorito(
             String documentoHuesped,
             String codigoAlojamiento
     ) {
-        validarDocumento(documentoHuesped);
+        ClaveFavorito clave = crearClave(
+                documentoHuesped,
+                codigoAlojamiento
+        );
 
-        if (codigoAlojamiento == null
-                || codigoAlojamiento.isBlank()) {
-            throw new IllegalArgumentException(
-                    "El código del alojamiento es obligatorio."
-            );
+        if (!clavesFavoritos.contiene(clave)) {
+            return false;
         }
 
         for (Favorito favorito : favoritos) {
-            boolean mismoHuesped =
-                    favorito.getHuesped().getDocumento()
-                            .equals(documentoHuesped);
+            boolean mismoHuesped = favorito.getHuesped().getDocumento()
+                    .equals(documentoHuesped);
 
-            boolean mismoAlojamiento =
-                    favorito.getAlojamiento().getCodigo()
-                            .equals(codigoAlojamiento);
+            boolean mismoAlojamiento = favorito.getAlojamiento().getCodigo()
+                    .equals(codigoAlojamiento);
 
             if (mismoHuesped && mismoAlojamiento) {
-                return favoritos.eliminar(favorito);
+                boolean eliminado = favoritos.eliminar(favorito);
+
+                if (eliminado) {
+                    clavesFavoritos.eliminar(clave);
+                }
+
+                return eliminado;
             }
         }
 
+        // Mantiene sincronizado el índice si no se encuentra el objeto asociado.
+        clavesFavoritos.eliminar(clave);
         return false;
     }
 
@@ -146,10 +141,25 @@ public class FavoritoServicio {
     }
 
     /**
-     * Consulta si existen favoritos registrados.
+     * Consulta si existen favoritos registrados para un huésped.
      */
     public boolean tieneFavoritos(String documentoHuesped) {
         return !obtenerFavoritos(documentoHuesped).estaVacia();
+    }
+
+    private ClaveFavorito crearClave(
+            String documentoHuesped,
+            String codigoAlojamiento
+    ) {
+        validarDocumento(documentoHuesped);
+
+        if (codigoAlojamiento == null || codigoAlojamiento.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El código del alojamiento es obligatorio."
+            );
+        }
+
+        return new ClaveFavorito(documentoHuesped, codigoAlojamiento);
     }
 
     /**
@@ -161,5 +171,12 @@ public class FavoritoServicio {
                     "El documento del huésped es obligatorio."
             );
         }
+    }
+
+    /** Clave compuesta que identifica un favorito sin mezclar huéspedes. */
+    private record ClaveFavorito(
+            String documentoHuesped,
+            String codigoAlojamiento
+    ) {
     }
 }

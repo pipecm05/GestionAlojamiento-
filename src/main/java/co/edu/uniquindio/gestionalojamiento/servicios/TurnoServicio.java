@@ -1,16 +1,24 @@
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
+import co.edu.uniquindio.gestionalojamiento.estructuras.ListaCircular;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoTurno;
-import co.edu.uniquindio.gestionalojamiento.modelo.Empleado;
 import co.edu.uniquindio.gestionalojamiento.modelo.Turno;
 
+/**
+ * Gestiona los turnos de los empleados utilizando una lista circular.
+ *
+ * La lista circular conserva el orden de registro y permite recorrer los
+ * turnos de forma secuencial sin perder la conexión entre el último y el
+ * primer elemento. Los métodos públicos que devuelven listas mantienen
+ * ListaDoble para no romper la compatibilidad con los controladores.
+ */
 public class TurnoServicio {
 
-    private final ListaDoble<Turno> turnos;
+    private final ListaCircular<Turno> turnos;
 
     public TurnoServicio() {
-        turnos = new ListaDoble<>();
+        turnos = new ListaCircular<>();
     }
 
     public boolean registrarTurno(Turno turno) {
@@ -73,6 +81,11 @@ public class TurnoServicio {
         return resultado;
     }
 
+    /**
+     * Devuelve una copia de los turnos en el mismo orden en que fueron
+     * registrados. Se conserva ListaDoble como tipo de retorno para que
+     * las vistas existentes sigan funcionando sin modificaciones.
+     */
     public ListaDoble<Turno> listarTurnos() {
         ListaDoble<Turno> resultado = new ListaDoble<>();
 
