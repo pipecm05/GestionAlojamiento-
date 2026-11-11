@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.datos.DatosPrueba;
@@ -59,7 +60,6 @@ public class PrincipalController {
     @FXML
     public void initialize() {
 
-        // Cargar los datos ficticios para realizar pruebas.
         try {
 
             DatosPrueba.cargarDatos(
@@ -132,6 +132,7 @@ public class PrincipalController {
                 );
 
                 alerta.show();
+
             }
 
         } catch (RuntimeException ex) {
@@ -341,6 +342,38 @@ public class PrincipalController {
     }
 
     @FXML
+    private void mostrarCalendario() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/calendario.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            CalendarioController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    reservaServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir el calendario de ocupación.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
     private void mostrarFolio() {
 
         try {
@@ -462,9 +495,6 @@ public class PrincipalController {
         }
     }
 
-    /**
-     * Abre el módulo del mapa y las rutas de los apartamentos.
-     */
     @FXML
     private void mostrarMapa() {
 
@@ -500,7 +530,8 @@ public class PrincipalController {
     private void cambiarContenido(
             String titulo,
             String subtitulo,
-            String descripcion) {
+            String descripcion
+    ) {
 
         VBox contenido = new VBox(20);
 
@@ -546,14 +577,14 @@ public class PrincipalController {
 
     private void mostrarError(
             String mensaje,
-            Exception ex) {
+            Exception ex
+    ) {
 
         Alert alerta = new Alert(
                 Alert.AlertType.ERROR
         );
 
         alerta.setTitle("Error de navegación");
-
         alerta.setHeaderText(mensaje);
 
         alerta.setContentText(
