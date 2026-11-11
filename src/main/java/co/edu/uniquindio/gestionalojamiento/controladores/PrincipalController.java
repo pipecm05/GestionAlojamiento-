@@ -1,6 +1,7 @@
 
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
+import co.edu.uniquindio.gestionalojamiento.datos.DatosPrueba;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.FavoritoServicio;
@@ -54,6 +55,29 @@ public class PrincipalController {
 
     @FXML
     public void initialize() {
+
+        // Cargar los datos ficticios para realizar pruebas.
+        try {
+
+            DatosPrueba.cargarDatos(
+                    catalogo,
+                    reservaServicio,
+                    tarifaServicio,
+                    empleadoServicio,
+                    turnoServicio,
+                    favoritoServicio
+            );
+
+        } catch (RuntimeException ex) {
+
+            System.err.println(
+                    "No fue posible cargar los datos de prueba: "
+                            + ex.getMessage()
+            );
+
+            ex.printStackTrace();
+        }
+
         mostrarInicio();
         iniciarVerificacionVencimientos();
     }
