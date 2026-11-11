@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
@@ -51,23 +50,16 @@ public class PreparacionController {
 
     @FXML
     private void initialize() {
-
         colCodigo.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(
-                        datos.getValue().getCodigo()
-                )
+                new ReadOnlyStringWrapper(datos.getValue().getCodigo())
         );
 
         colNombre.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(
-                        datos.getValue().getNombre()
-                )
+                new ReadOnlyStringWrapper(datos.getValue().getNombre())
         );
 
         colEstado.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(
-                        datos.getValue().getEstado().name()
-                )
+                new ReadOnlyStringWrapper(datos.getValue().getEstado().name())
         );
 
         tablaApartamentos.setPlaceholder(
@@ -82,7 +74,6 @@ public class PreparacionController {
             CatalogoAlojamiento catalogo,
             ReservaServicio reservaServicio
     ) {
-
         if (catalogo == null || reservaServicio == null) {
             throw new IllegalArgumentException(
                     "El catálogo y el servicio de reservas son obligatorios."
@@ -91,7 +82,6 @@ public class PreparacionController {
 
         this.catalogo = catalogo;
         this.reservaServicio = reservaServicio;
-
         this.preparacionServicio =
                 reservaServicio.getPreparacionServicio();
 
@@ -100,40 +90,37 @@ public class PreparacionController {
 
     @FXML
     private void actualizarTabla() {
-
         if (catalogo == null || preparacionServicio == null) {
             return;
         }
 
+        // Sincroniza la cola con los estados reales del catálogo.
+        preparacionServicio.sincronizarPendientes(
+                catalogo.listarApartamentos()
+        );
+
         ObservableList<Apartamento> apartamentos =
                 FXCollections.observableArrayList();
 
-        for (Apartamento apartamento :
-                catalogo.listarApartamentos()) {
-
+        for (Apartamento apartamento : catalogo.listarApartamentos()) {
             apartamentos.add(apartamento);
         }
 
         tablaApartamentos.setItems(apartamentos);
-
         actualizarInformacion();
     }
 
     private void actualizarInformacion() {
-
         int pendientes = preparacionServicio.cantidadPendientes();
 
         lblPendientes.setText(
                 "Apartamentos pendientes: " + pendientes
         );
 
-        Apartamento siguiente =
-                preparacionServicio.consultarSiguiente();
+        Apartamento siguiente = preparacionServicio.consultarSiguiente();
 
         if (siguiente == null) {
-            lblSiguiente.setText(
-                    "Siguiente apartamento: ninguno"
-            );
+            lblSiguiente.setText("Siguiente apartamento: ninguno");
         } else {
             lblSiguiente.setText(
                     "Siguiente apartamento: "
@@ -147,9 +134,7 @@ public class PreparacionController {
                 preparacionServicio.getApartamentoEnPreparacion();
 
         if (activo == null) {
-            lblEnPreparacion.setText(
-                    "En preparación: ninguno"
-            );
+            lblEnPreparacion.setText("En preparación: ninguno");
         } else {
             lblEnPreparacion.setText(
                     "En preparación: "
@@ -169,9 +154,7 @@ public class PreparacionController {
 
     @FXML
     private void iniciarPreparacion() {
-
         try {
-
             Apartamento siguiente =
                     preparacionServicio.iniciarSiguientePreparacion();
 
@@ -181,7 +164,6 @@ public class PreparacionController {
                         "Cola vacía",
                         "No hay apartamentos pendientes de preparación."
                 );
-
                 actualizarTabla();
                 return;
             }
@@ -195,24 +177,19 @@ public class PreparacionController {
                             + siguiente.getCodigo() + "."
             );
 
-        } catch (IllegalArgumentException
-                 | IllegalStateException ex) {
-
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             mostrarAlerta(
                     Alert.AlertType.ERROR,
                     "No se pudo iniciar la preparación",
                     ex.getMessage()
             );
-
             actualizarTabla();
         }
     }
 
     @FXML
     private void finalizarPreparacion() {
-
         try {
-
             Apartamento activo =
                     preparacionServicio.getApartamentoEnPreparacion();
 
@@ -222,15 +199,12 @@ public class PreparacionController {
                         "Sin preparación activa",
                         "No hay ningún apartamento en preparación."
                 );
-
                 actualizarTabla();
                 return;
             }
 
             String codigo = activo.getCodigo();
-
             preparacionServicio.finalizarPreparacion();
-
             actualizarTabla();
 
             mostrarAlerta(
@@ -240,15 +214,12 @@ public class PreparacionController {
                             + " quedó preparado correctamente."
             );
 
-        } catch (IllegalArgumentException
-                 | IllegalStateException ex) {
-
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             mostrarAlerta(
                     Alert.AlertType.ERROR,
                     "No se pudo finalizar la preparación",
                     ex.getMessage()
             );
-
             actualizarTabla();
         }
     }
@@ -258,7 +229,6 @@ public class PreparacionController {
             String titulo,
             String mensaje
     ) {
-
         Alert alerta = new Alert(tipo);
         alerta.setTitle(titulo);
         alerta.setHeaderText(null);

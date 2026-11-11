@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.servicios;
 
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
@@ -9,9 +8,8 @@ import java.util.Comparator;
 
 public class PreparacionServicio {
 
-    private final ColaPrioridad<Apartamento> colaPreparacion;
-
-    // El servicio conserva el apartamento que está en preparación.
+    private ColaPrioridad<Apartamento> colaPreparacion;
+    private final Comparator<Apartamento> comparador;
     private Apartamento apartamentoEnPreparacion;
 
     public PreparacionServicio(Comparator<Apartamento> comparador) {
@@ -21,8 +19,42 @@ public class PreparacionServicio {
             );
         }
 
+        this.comparador = comparador;
         colaPreparacion = new ColaPrioridad<>(10, comparador);
         apartamentoEnPreparacion = null;
+    }
+
+    /**
+     * Reconstruye la cola con todos los apartamentos que actualmente
+     * tienen estado PENDIENTE_PREPARACION en el catálogo.
+     *
+     * Esto permite recuperar también los pendientes que ya existían
+     * antes de crear el servicio, por ejemplo los datos iniciales.
+     */
+    public void sincronizarPendientes(Iterable<Apartamento> apartamentos) {
+        if (apartamentos == null) {
+            throw new IllegalArgumentException(
+                    "La lista de apartamentos es obligatoria."
+            );
+        }
+
+        ColaPrioridad<Apartamento> nuevaCola =
+                new ColaPrioridad<>(10, comparador);
+
+        for (Apartamento apartamento : apartamentos) {
+            if (apartamento != null
+                    && apartamento.getEstado()
+                    == EstadoApartamento.PENDIENTE_PREPARACION) {
+
+                if (apartamentoEnPreparacion == null
+                        || !apartamentoEnPreparacion.getCodigo()
+                        .equals(apartamento.getCodigo())) {
+                    nuevaCola.insertar(apartamento);
+                }
+            }
+        }
+
+        colaPreparacion = nuevaCola;
     }
 
     public void agregarApartamento(Apartamento apartamento) {
@@ -45,6 +77,12 @@ public class PreparacionServicio {
             throw new IllegalStateException(
                     "El apartamento ya está en preparación."
             );
+        }
+
+        for (Apartamento pendiente : colaPreparacion) {
+            if (pendiente.getCodigo().equals(apartamento.getCodigo())) {
+                return;
+            }
         }
 
         colaPreparacion.insertar(apartamento);
@@ -74,10 +112,6 @@ public class PreparacionServicio {
         return colaPreparacion.getTamanio();
     }
 
-    /**
-     * Inicia la preparación del apartamento que tiene
-     * la mayor prioridad en la cola.
-     */
     public Apartamento iniciarSiguientePreparacion() {
         if (apartamentoEnPreparacion != null) {
             throw new IllegalStateException(
@@ -92,14 +126,9 @@ public class PreparacionServicio {
         }
 
         iniciarPreparacion(siguiente);
-
         return apartamentoEnPreparacion;
     }
 
-    /**
-     * Inicia un apartamento únicamente si es el siguiente
-     * de la cola de prioridad.
-     */
     public void iniciarPreparacion(Apartamento apartamento) {
         if (apartamento == null) {
             throw new IllegalArgumentException(
@@ -135,8 +164,6 @@ public class PreparacionServicio {
             );
         }
 
-        // Primero se cambia el estado.
-        // Solo después se retira de la cola.
         apartamento.cambiarEstado(
                 EstadoApartamento.EN_PREPARACION,
                 "Preparación iniciada."
@@ -145,7 +172,6 @@ public class PreparacionServicio {
         Apartamento extraido = colaPreparacion.extraerPrioridad();
 
         if (!extraido.getCodigo().equals(apartamento.getCodigo())) {
-            // Protección ante una extracción inesperada.
             apartamento.cambiarEstado(
                     EstadoApartamento.PENDIENTE_PREPARACION,
                     "Se revirtió el inicio de preparación."
@@ -161,9 +187,6 @@ public class PreparacionServicio {
         apartamentoEnPreparacion = apartamento;
     }
 
-    /**
-     * Finaliza la preparación del apartamento activo.
-     */
     public void finalizarPreparacion() {
         if (apartamentoEnPreparacion == null) {
             throw new IllegalStateException(
@@ -179,10 +202,6 @@ public class PreparacionServicio {
         apartamentoEnPreparacion = null;
     }
 
-    /**
-     * Finaliza la preparación verificando que sea
-     * el mismo apartamento que está activo.
-     */
     public void finalizarPreparacion(Apartamento apartamento) {
         if (apartamento == null) {
             throw new IllegalArgumentException(
