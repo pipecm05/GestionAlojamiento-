@@ -4,6 +4,7 @@ import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionGrupo;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
 
@@ -21,7 +22,6 @@ import java.time.LocalDateTime;
 import co.edu.uniquindio.gestionalojamiento.modelo.MovimientoFolio;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.Locale;
 
 public class ReservaController {
 
@@ -40,6 +40,20 @@ public class ReservaController {
     @FXML private DatePicker dpEntrada;
     @FXML private DatePicker dpSalida;
     @FXML private Label lblEstado;
+
+    // Controles para reservas familiares y grupales.
+    @FXML private TextField txtCodigoGrupo;
+    @FXML private ComboBox<CanalReserva> cbCanalGrupo;
+    @FXML private DatePicker dpEntradaGrupo;
+    @FXML private DatePicker dpSalidaGrupo;
+    @FXML private ListView<String> lvHuespedesDisponibles;
+    @FXML private ListView<String> lvApartamentosDisponibles;
+    @FXML private ComboBox<String> cbHuespedGrupo;
+    @FXML private ComboBox<String> cbApartamentoGrupo;
+    @FXML private ListView<String> lvAsignacionesGrupo;
+    @FXML private Label lblEstadoGrupo;
+
+    private AsignacionGrupo grupoActual;
 
     @FXML private TableView<Reserva> tablaReservas;
     @FXML private TableColumn<Reserva, String> colCodigo;
@@ -60,14 +74,31 @@ public class ReservaController {
 
         cbCanal.setValue(CanalReserva.DIRECTA);
 
+        cbCanalGrupo.getItems().setAll(
+                CanalReserva.DIRECTA,
+                CanalReserva.PORTAL
+        );
+        cbCanalGrupo.setValue(CanalReserva.DIRECTA);
+
+        lvHuespedesDisponibles.getSelectionModel()
+                .setSelectionMode(SelectionMode.MULTIPLE);
+        lvApartamentosDisponibles.getSelectionModel()
+                .setSelectionMode(SelectionMode.MULTIPLE);
+
         colCodigo.setCellValueFactory(d ->
                 new ReadOnlyStringWrapper(
                         d.getValue().getCodigo()));
 
-        colHuesped.setCellValueFactory(d ->
-                new ReadOnlyStringWrapper(
-                        d.getValue().getHuesped()
-                                .getNombreCompleto()));
+        colHuesped.setCellValueFactory(d -> {
+            StringBuilder nombres = new StringBuilder();
+            for (Huesped huesped : d.getValue().getHuespedes()) {
+                if (nombres.length() > 0) {
+                    nombres.append(", ");
+                }
+                nombres.append(huesped.getNombreCompleto());
+            }
+            return new ReadOnlyStringWrapper(nombres.toString());
+        });
 
         colApartamento.setCellValueFactory(d ->
                 new ReadOnlyStringWrapper(
@@ -148,6 +179,23 @@ public class ReservaController {
         if (cbApartamento.getItems().contains(
                 apartamentoSeleccionado)) {
             cbApartamento.setValue(apartamentoSeleccionado);
+        }
+
+        // Actualizar las listas de selección para reservas grupales.
+        lvHuespedesDisponibles.getItems().clear();
+        for (Huesped huesped : catalogo.listarHuespedes()) {
+            lvHuespedesDisponibles.getItems().add(
+                    huesped.getDocumento() + " | "
+                            + huesped.getNombreCompleto()
+            );
+        }
+
+        lvApartamentosDisponibles.getItems().clear();
+        for (Apartamento apartamento : catalogo.listarApartamentos()) {
+            lvApartamentosDisponibles.getItems().add(
+                    apartamento.getCodigo() + " | capacidad: "
+                            + apartamento.getCapacidadMaxima()
+            );
         }
 
         mostrarTodas();
@@ -375,6 +423,276 @@ public class ReservaController {
                  | IllegalStateException ex) {
             error(ex.getMessage());
         }
+    }
+
+    // -----------------------------------------------------------------
+    // REGISTRO DE RESERVAS FAMILIARES Y GRUPALES
+    // -----------------------------------------------------------------
+
+    private AsignacionGrupo obtenerOCrearGrupo() {
+        String codigo = txtCodigoGrupo.getText() == null
+                ? "" : txtCodigoGrupo.getText().trim();
+
+        if (codigo.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Ingresa primero el código base del grupo.");
+        }
+
+        if (grupoActual == null) {
+            grupoActual = new AsignacionGrupo(codigo);
+        } else if (!grupoActual.getCodigo().equals(codigo)) {
+            throw new IllegalStateException(
+                    "Ya comenzaste a construir un grupo con el código "
+                            + grupoActual.getCodigo()
+                            + ". Limpia el grupo antes de cambiar el código.");
+        }
+
+        return grupoActual;
+    }
+
+    private String extraerIdentificador(String elemento) {
+        if (elemento == null || elemento.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Selecciona un elemento de la lista.");
+        }
+        int separador = elemento.indexOf(" | ");
+        return separador >= 0
+                ? elemento.substring(0, separador).trim()
+                : elemento.trim();
+    }
+
+    @FXML
+    private void agregarHuespedesGrupo() {
+        try {
+            AsignacionGrupo grupo = obtenerOCrearGrupo();
+            var seleccionados =
+                    lvHuespedesDisponibles.getSelectionModel()
+                            .getSelectedItems();
+
+            if (seleccionados.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Selecciona uno o varios huéspedes.");
+            }
+
+            int agregados = 0;
+            for (String elemento : seleccionados) {
+                String documento = extraerIdentificador(elemento);
+                Huesped huesped = catalogo.buscarHuesped(documento);
+                if (huesped == null) {
+                    throw new IllegalArgumentException(
+                            "No se encontró el huésped " + documento + ".");
+                }
+                grupo.agregarHuesped(huesped);
+                agregados++;
+            }
+
+            actualizarSeleccionGrupo();
+            lblEstadoGrupo.setText(
+                    agregados + " huésped(es) agregado(s). Total del grupo: "
+                            + grupo.getHuespedes().getTamanio());
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            error(ex.getMessage());
+        }
+    }
+
+    @FXML
+    private void agregarApartamentosGrupo() {
+        try {
+            AsignacionGrupo grupo = obtenerOCrearGrupo();
+            var seleccionados =
+                    lvApartamentosDisponibles.getSelectionModel()
+                            .getSelectedItems();
+
+            if (seleccionados.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Selecciona uno o varios apartamentos.");
+            }
+
+            int agregados = 0;
+            for (String elemento : seleccionados) {
+                String codigo = extraerIdentificador(elemento);
+                Apartamento apartamento =
+                        catalogo.buscarApartamento(codigo);
+                if (apartamento == null) {
+                    throw new IllegalArgumentException(
+                            "No se encontró el apartamento " + codigo + ".");
+                }
+                grupo.agregarApartamento(apartamento);
+                agregados++;
+            }
+
+            actualizarSeleccionGrupo();
+            lblEstadoGrupo.setText(
+                    agregados + " apartamento(s) agregado(s). Total: "
+                            + grupo.getApartamentos().getTamanio());
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            error(ex.getMessage());
+        }
+    }
+
+    private void actualizarSeleccionGrupo() {
+        cbHuespedGrupo.getItems().clear();
+        cbApartamentoGrupo.getItems().clear();
+        lvAsignacionesGrupo.getItems().clear();
+
+        if (grupoActual == null) {
+            return;
+        }
+
+        for (Huesped huesped : grupoActual.getHuespedes()) {
+            cbHuespedGrupo.getItems().add(huesped.getDocumento());
+        }
+
+        for (Apartamento apartamento : grupoActual.getApartamentos()) {
+            cbApartamentoGrupo.getItems().add(apartamento.getCodigo());
+        }
+
+        for (var asignacion : grupoActual.getAsignaciones()) {
+            lvAsignacionesGrupo.getItems().add(
+                    asignacion.getHuesped().getDocumento()
+                            + " - "
+                            + asignacion.getHuesped().getNombreCompleto()
+                            + " → "
+                            + asignacion.getApartamento().getCodigo()
+            );
+        }
+
+        if (!cbHuespedGrupo.getItems().isEmpty()) {
+            cbHuespedGrupo.getSelectionModel().selectFirst();
+        }
+        if (!cbApartamentoGrupo.getItems().isEmpty()) {
+            cbApartamentoGrupo.getSelectionModel().selectFirst();
+        }
+    }
+
+    @FXML
+    private void asignarHuespedGrupo() {
+        try {
+            if (grupoActual == null) {
+                throw new IllegalArgumentException(
+                        "Primero agrega huéspedes y apartamentos al grupo.");
+            }
+
+            String documento = cbHuespedGrupo.getValue();
+            String codigoApartamento = cbApartamentoGrupo.getValue();
+
+            if (documento == null || codigoApartamento == null) {
+                throw new IllegalArgumentException(
+                        "Selecciona un huésped y un apartamento.");
+            }
+
+            Huesped huesped = catalogo.buscarHuesped(documento);
+            Apartamento apartamento =
+                    catalogo.buscarApartamento(codigoApartamento);
+
+            if (huesped == null || apartamento == null) {
+                throw new IllegalArgumentException(
+                        "El huésped o apartamento seleccionado no existe.");
+            }
+
+            grupoActual.asignarHuesped(huesped, apartamento);
+            actualizarSeleccionGrupo();
+
+            lblEstadoGrupo.setText(
+                    "Huésped " + huesped.getNombreCompleto()
+                            + " asignado a " + apartamento.getCodigo() + ".");
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            error(ex.getMessage());
+        }
+    }
+
+    @FXML
+    private void registrarReservaGrupal() {
+        if (catalogo == null || reservaServicio == null) {
+            error("Los servicios no están configurados.");
+            return;
+        }
+
+        try {
+            if (grupoActual == null) {
+                throw new IllegalArgumentException(
+                        "Primero agrega los huéspedes y apartamentos.");
+            }
+
+            String codigoBase = txtCodigoGrupo.getText().trim();
+            if (codigoBase.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Ingresa el código base de la reserva grupal.");
+            }
+
+            LocalDate entrada = dpEntradaGrupo.getValue();
+            LocalDate salida = dpSalidaGrupo.getValue();
+            if (entrada == null || salida == null
+                    || !entrada.isBefore(salida)) {
+                throw new IllegalArgumentException(
+                        "La fecha de entrada debe ser anterior a la salida.");
+            }
+
+            CanalReserva canal = cbCanalGrupo.getValue();
+            if (canal == null) {
+                throw new IllegalArgumentException(
+                        "Selecciona el canal de la reserva grupal.");
+            }
+
+            if (!grupoActual.estanTodosLosHuespedesAsignados()) {
+                throw new IllegalArgumentException(
+                        "Debes asignar todos los huéspedes a un apartamento.");
+            }
+
+            ListaDoble<Reserva> reservasCreadas =
+                    reservaServicio.registrarReservaGrupal(
+                            codigoBase,
+                            grupoActual,
+                            entrada,
+                            salida,
+                            canal
+                    );
+
+            StringBuilder codigos = new StringBuilder();
+            for (Reserva reserva : reservasCreadas) {
+                if (codigos.length() > 0) {
+                    codigos.append("\n");
+                }
+                codigos.append(reserva.getCodigo());
+            }
+
+            int cantidad = reservasCreadas.getTamanio();
+            limpiarGrupo();
+            mostrarTodas();
+
+            lblEstadoGrupo.setText(
+                    "Reserva grupal registrada. Reservas creadas: "
+                            + cantidad);
+
+            informar(
+                    "Reserva familiar o grupal registrada",
+                    "Se registraron " + cantidad
+                            + " reserva(s), una por apartamento:\n\n"
+                            + codigos
+            );
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            error(ex.getMessage());
+        }
+    }
+
+    @FXML
+    private void limpiarGrupo() {
+        grupoActual = null;
+        txtCodigoGrupo.clear();
+        dpEntradaGrupo.setValue(null);
+        dpSalidaGrupo.setValue(null);
+        cbCanalGrupo.setValue(CanalReserva.DIRECTA);
+        cbHuespedGrupo.getItems().clear();
+        cbApartamentoGrupo.getItems().clear();
+        lvAsignacionesGrupo.getItems().clear();
+        lvHuespedesDisponibles.getSelectionModel().clearSelection();
+        lvApartamentosDisponibles.getSelectionModel().clearSelection();
+        lblEstadoGrupo.setText(
+                "Grupo limpio. Puedes comenzar una nueva reserva.");
     }
 
     private void error(String mensaje) {
