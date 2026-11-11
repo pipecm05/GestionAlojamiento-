@@ -377,12 +377,33 @@ public class PrincipalController {
     @FXML
     private void mostrarReportes() {
 
-        cambiarContenido(
-                "Reportes administrativos",
-                "Indicadores y estadísticas",
-                "Desde este módulo podrás consultar "
-                        + "los reportes del sistema."
-        );
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/reportes.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            ReportesController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    reservaServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir los reportes administrativos.",
+                    ex
+            );
+        }
     }
 
     private void cambiarContenido(
