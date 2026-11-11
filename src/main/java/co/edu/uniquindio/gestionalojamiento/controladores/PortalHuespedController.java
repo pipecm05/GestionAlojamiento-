@@ -1,14 +1,18 @@
+
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
+import co.edu.uniquindio.gestionalojamiento.modelo.DetalleTarifaNoche;
 import co.edu.uniquindio.gestionalojamiento.modelo.Favorito;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.FavoritoServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.FolioServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -19,6 +23,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
@@ -30,6 +35,7 @@ public class PortalHuespedController {
     private CatalogoAlojamiento catalogo;
     private ReservaServicio reservaServicio;
     private FavoritoServicio favoritoServicio;
+    private TarifaServicio tarifaServicio;
 
     private final ObservableList<Apartamento> alojamientos =
             FXCollections.observableArrayList();
@@ -38,6 +44,9 @@ public class PortalHuespedController {
             FXCollections.observableArrayList();
 
     private final ObservableList<Apartamento> favoritos =
+            FXCollections.observableArrayList();
+
+    private final ObservableList<DetalleTarifaNoche> detallesTarifa =
             FXCollections.observableArrayList();
 
     @FXML
@@ -57,6 +66,18 @@ public class PortalHuespedController {
 
     @FXML
     private Label lblResultado;
+
+    @FXML
+    private Label lblTotalReserva;
+
+    @FXML
+    private Label lblAnticipo;
+
+    @FXML
+    private Label lblSaldoPendiente;
+
+    @FXML
+    private Label lblEstadoPago;
 
     @FXML
     private TableView<Apartamento> tablaAlojamientos;
@@ -92,6 +113,24 @@ public class PortalHuespedController {
     private TableColumn<Reserva, String> colEstadoReserva;
 
     @FXML
+    private TableView<DetalleTarifaNoche> tablaDesglose;
+
+    @FXML
+    private TableColumn<DetalleTarifaNoche, String> colFechaDesglose;
+
+    @FXML
+    private TableColumn<DetalleTarifaNoche, String> colTemporadaDesglose;
+
+    @FXML
+    private TableColumn<DetalleTarifaNoche, String> colPersonasDesglose;
+
+    @FXML
+    private TableColumn<DetalleTarifaNoche, String> colTarifaDesglose;
+
+    @FXML
+    private TableColumn<DetalleTarifaNoche, String> colSubtotalDesglose;
+
+    @FXML
     private TableView<Apartamento> tablaFavoritos;
 
     @FXML
@@ -107,21 +146,33 @@ public class PortalHuespedController {
     public void initialize() {
 
         spPersonas.setValueFactory(
-                new SpinnerValueFactoryFactory().crear(1, 20, 1)
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        1, 20, 1
+                )
         );
 
         configurarColumnas();
+
+        tablaReservas.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((observable, anterior, seleccionada) ->
+                        mostrarDesglose(seleccionada)
+                );
+
+        limpiarResumenTarifa();
     }
 
     public void configurar(
             CatalogoAlojamiento catalogo,
             ReservaServicio reservaServicio,
-            FavoritoServicio favoritoServicio
+            FavoritoServicio favoritoServicio,
+            TarifaServicio tarifaServicio
     ) {
 
         this.catalogo = catalogo;
         this.reservaServicio = reservaServicio;
         this.favoritoServicio = favoritoServicio;
+        this.tarifaServicio = tarifaServicio;
 
         cargarHuespedes();
     }
@@ -190,6 +241,42 @@ public class PortalHuespedController {
                 )
         );
 
+        colFechaDesglose.setCellValueFactory(
+                dato -> new ReadOnlyStringWrapper(
+                        dato.getValue().getFecha().toString()
+                )
+        );
+
+        colTemporadaDesglose.setCellValueFactory(
+                dato -> new ReadOnlyStringWrapper(
+                        dato.getValue().getTemporada().toString()
+                )
+        );
+
+        colPersonasDesglose.setCellValueFactory(
+                dato -> new ReadOnlyStringWrapper(
+                        dato.getValue().getPersonasQuePagan()
+                                + " de "
+                                + dato.getValue().getTotalOcupantes()
+                )
+        );
+
+        colTarifaDesglose.setCellValueFactory(
+                dato -> new ReadOnlyStringWrapper(
+                        formatoMoneda(
+                                dato.getValue().getTarifaPorPersona()
+                        )
+                )
+        );
+
+        colSubtotalDesglose.setCellValueFactory(
+                dato -> new ReadOnlyStringWrapper(
+                        formatoMoneda(
+                                dato.getValue().getSubtotal()
+                        )
+                )
+        );
+
         colCodigoFavorito.setCellValueFactory(
                 dato -> new ReadOnlyStringWrapper(
                         dato.getValue().getCodigo()
@@ -212,6 +299,7 @@ public class PortalHuespedController {
 
         tablaAlojamientos.setItems(alojamientos);
         tablaReservas.setItems(reservas);
+        tablaDesglose.setItems(detallesTarifa);
         tablaFavoritos.setItems(favoritos);
     }
 
@@ -263,6 +351,8 @@ public class PortalHuespedController {
 
             reservas.clear();
             favoritos.clear();
+            detallesTarifa.clear();
+            limpiarResumenTarifa();
             return;
         }
 
@@ -272,6 +362,8 @@ public class PortalHuespedController {
 
         cargarReservas();
         cargarFavoritos();
+        detallesTarifa.clear();
+        limpiarResumenTarifa();
     }
 
     @FXML
@@ -368,6 +460,7 @@ public class PortalHuespedController {
     private void solicitarReserva() {
 
         Huesped huesped = cmbHuesped.getValue();
+
         Apartamento apartamento =
                 tablaAlojamientos.getSelectionModel().getSelectedItem();
 
@@ -423,13 +516,19 @@ public class PortalHuespedController {
 
             cargarReservas();
 
+            tablaReservas.getSelectionModel().select(reserva);
+            tablaReservas.scrollTo(reserva);
+
+            mostrarDesglose(reserva);
+
             mostrarAlerta(
                     Alert.AlertType.INFORMATION,
                     "La solicitud fue registrada correctamente.\n\n"
                             + "Código: " + reserva.getCodigo()
                             + "\nApartamento: " + apartamento.getNombre()
                             + "\nEstado: " + reserva.getEstado()
-                            + "\n\nLa reserva queda pendiente de confirmación."
+                            + "\n\nSelecciona la reserva en «Mis reservas» "
+                            + "para consultar el precio y registrar el anticipo."
             );
 
             buscarAlojamientos();
@@ -441,6 +540,152 @@ public class PortalHuespedController {
                     "No fue posible registrar la solicitud: "
                             + ex.getMessage()
             );
+        }
+    }
+
+    private void mostrarDesglose(Reserva reserva) {
+
+        detallesTarifa.clear();
+        limpiarResumenTarifa();
+
+        if (reserva == null || tarifaServicio == null) {
+            return;
+        }
+
+        try {
+
+            ListaDoble<DetalleTarifaNoche> desglose =
+                    tarifaServicio.generarDesglose(reserva);
+
+            for (DetalleTarifaNoche detalle : desglose) {
+                detallesTarifa.add(detalle);
+            }
+
+            double total = tarifaServicio.calcularTotal(reserva);
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            double anticipoRequerido =
+                    folio.calcularAnticipoPortal(tarifaServicio);
+
+            double pagosRegistrados = folio.obtenerPagosNetos();
+
+            double saldo = Math.max(0, total - pagosRegistrados);
+
+            lblTotalReserva.setText(formatoMoneda(total));
+            lblAnticipo.setText(formatoMoneda(anticipoRequerido));
+            lblSaldoPendiente.setText(formatoMoneda(saldo));
+
+            if (reserva.getEstado().toString().equals("CONFIRMADA")) {
+                lblEstadoPago.setText(
+                        "Reserva confirmada. Pagos registrados: "
+                                + formatoMoneda(pagosRegistrados)
+                );
+            } else {
+                lblEstadoPago.setText(
+                        "Anticipo registrado: "
+                                + formatoMoneda(pagosRegistrados)
+                                + ". Se requiere el 30 % para confirmar."
+                );
+            }
+
+        } catch (RuntimeException ex) {
+
+            lblEstadoPago.setText(
+                    "No fue posible calcular el desglose: "
+                            + ex.getMessage()
+            );
+        }
+    }
+
+    @FXML
+    private void pagarAnticipoYConfirmar() {
+
+        Reserva reserva =
+                tablaReservas.getSelectionModel().getSelectedItem();
+
+        if (reserva == null) {
+            mostrarAlerta(
+                    Alert.AlertType.WARNING,
+                    "Selecciona una reserva para continuar."
+            );
+            return;
+        }
+
+        try {
+
+            if (reserva.getCanal() != CanalReserva.PORTAL) {
+                mostrarAlerta(
+                        Alert.AlertType.WARNING,
+                        "El anticipo del 30 % solo aplica a reservas "
+                                + "realizadas desde el portal."
+                );
+                return;
+            }
+
+            if (!reserva.getEstado().toString().equals("PENDIENTE")) {
+                mostrarAlerta(
+                        Alert.AlertType.INFORMATION,
+                        "Esta reserva no se encuentra pendiente."
+                );
+                return;
+            }
+
+            FolioServicio folio =
+                    reservaServicio.obtenerFolio(reserva.getCodigo());
+
+            double anticipoRequerido =
+                    folio.calcularAnticipoPortal(tarifaServicio);
+
+            double pagosRegistrados = folio.obtenerPagosNetos();
+
+            double faltante = anticipoRequerido - pagosRegistrados;
+
+            if (faltante > 0.001) {
+
+                String codigoPago =
+                        "PAGO-" + System.currentTimeMillis();
+
+                reservaServicio.registrarAbonoPortal(
+                        reserva.getCodigo(),
+                        codigoPago,
+                        faltante
+                );
+            }
+
+            reservaServicio.confirmarReserva(
+                    reserva.getCodigo(),
+                    tarifaServicio
+            );
+
+            reservaServicio.registrarCargoAlojamiento(
+                    reserva.getCodigo(),
+                    tarifaServicio
+            );
+
+            cargarReservas();
+            tablaReservas.getSelectionModel().select(reserva);
+            mostrarDesglose(reserva);
+
+            mostrarAlerta(
+                    Alert.AlertType.INFORMATION,
+                    "La reserva fue confirmada correctamente.\n\n"
+                            + "Código: " + reserva.getCodigo()
+                            + "\nAnticipo requerido: "
+                            + formatoMoneda(anticipoRequerido)
+                            + "\nEstado: " + reserva.getEstado()
+            );
+
+        } catch (RuntimeException ex) {
+
+            mostrarAlerta(
+                    Alert.AlertType.ERROR,
+                    "No fue posible completar el pago y la confirmación:\n"
+                            + ex.getMessage()
+            );
+
+            mostrarDesglose(reserva);
         }
     }
 
@@ -571,6 +816,27 @@ public class PortalHuespedController {
         }
     }
 
+    private void limpiarResumenTarifa() {
+
+        if (lblTotalReserva != null) {
+            lblTotalReserva.setText("$ 0");
+        }
+
+        if (lblAnticipo != null) {
+            lblAnticipo.setText("$ 0");
+        }
+
+        if (lblSaldoPendiente != null) {
+            lblSaldoPendiente.setText("$ 0");
+        }
+
+        if (lblEstadoPago != null) {
+            lblEstadoPago.setText(
+                    "Selecciona una reserva para consultar sus valores."
+            );
+        }
+    }
+
     private String formatoMoneda(double valor) {
 
         return String.format(
@@ -590,21 +856,5 @@ public class PortalHuespedController {
         alerta.setHeaderText(null);
         alerta.setContentText(mensaje);
         alerta.showAndWait();
-    }
-
-    private static class SpinnerValueFactoryFactory {
-
-        private javafx.scene.control.SpinnerValueFactory<Integer> crear(
-                int minimo,
-                int maximo,
-                int inicial
-        ) {
-
-            return new javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory(
-                    minimo,
-                    maximo,
-                    inicial
-            );
-        }
     }
 }

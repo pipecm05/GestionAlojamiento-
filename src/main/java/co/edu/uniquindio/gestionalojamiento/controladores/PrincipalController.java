@@ -582,7 +582,8 @@ public class PrincipalController {
             controlador.configurar(
                     catalogo,
                     reservaServicio,
-                    favoritoServicio
+                    favoritoServicio,
+                    tarifaServicio
             );
 
             panelPrincipal.setCenter(vista);

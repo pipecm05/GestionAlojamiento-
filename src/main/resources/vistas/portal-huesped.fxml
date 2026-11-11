@@ -135,6 +135,9 @@
                           -fx-font-weight: bold;
                           -fx-text-fill: #243447;"/>
 
+            <Label text="Selecciona una reserva para consultar su desglose y anticipo."
+                   style="-fx-text-fill: #546E7A;"/>
+
             <TableView fx:id="tablaReservas"
                        prefHeight="200">
 
@@ -156,6 +159,88 @@
                                  prefWidth="120"/>
                 </columns>
             </TableView>
+
+            <Separator/>
+
+            <Label text="DESGLOSE DE TARIFAS"
+                   style="-fx-font-size: 18px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
+
+            <Label text="El valor de cada noche depende de la temporada correspondiente."
+                   style="-fx-text-fill: #546E7A;"/>
+
+            <TableView fx:id="tablaDesglose"
+                       prefHeight="200">
+
+                <columns>
+                    <TableColumn fx:id="colFechaDesglose"
+                                 text="Fecha"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colTemporadaDesglose"
+                                 text="Temporada"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colPersonasDesglose"
+                                 text="Personas que pagan"
+                                 prefWidth="150"/>
+
+                    <TableColumn fx:id="colTarifaDesglose"
+                                 text="Tarifa por persona"
+                                 prefWidth="150"/>
+
+                    <TableColumn fx:id="colSubtotalDesglose"
+                                 text="Subtotal noche"
+                                 prefWidth="150"/>
+                </columns>
+            </TableView>
+
+            <VBox spacing="10"
+                  style="-fx-background-color: white;
+                         -fx-padding: 18;
+                         -fx-background-radius: 8;
+                         -fx-border-color: #DCE3EA;
+                         -fx-border-radius: 8;">
+
+                <Label text="RESUMEN DE PAGO"
+                       style="-fx-font-size: 17px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <HBox spacing="10">
+                    <Label text="Total de la reserva:"
+                           style="-fx-font-weight: bold;"/>
+                    <Label fx:id="lblTotalReserva"
+                           text=" 0"/>
+                </HBox>
+
+                <HBox spacing="10">
+                    <Label text="Anticipo requerido (30 %):"
+                           style="-fx-font-weight: bold;"/>
+                    <Label fx:id="lblAnticipo"
+                           text=" 0"/>
+                </HBox>
+
+                <HBox spacing="10">
+                    <Label text="Saldo pendiente:"
+                           style="-fx-font-weight: bold;"/>
+                    <Label fx:id="lblSaldoPendiente"
+                           text=" 0"/>
+                </HBox>
+
+                <Label fx:id="lblEstadoPago"
+                       text="Selecciona una reserva para consultar sus valores."
+                       wrapText="true"
+                       style="-fx-text-fill: #546E7A;"/>
+
+                <Button text="Registrar anticipo del 30 % y confirmar reserva"
+                        onAction="#pagarAnticipoYConfirmar"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: #2E7D32;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;"/>
+            </VBox>
 
             <Separator/>
 
