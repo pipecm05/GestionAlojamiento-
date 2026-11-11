@@ -75,9 +75,6 @@ public class CanalExternoServicio {
             return solicitud;
         }
 
-        // Registrar mediante el servicio existente.
-        // Si ocurre un error inesperado, la solicitud
-        // permanece en la cola para poder revisarla.
         reservaServicio.registrarReserva(
                 solicitud.getCodigo(),
                 solicitud.getApartamento(),
@@ -105,6 +102,17 @@ public class CanalExternoServicio {
         }
 
         return procesadas;
+    }
+
+    public ListaDoble<SolicitudExterna> obtenerPendientes() {
+
+        ListaDoble<SolicitudExterna> copia = new ListaDoble<>();
+
+        for (SolicitudExterna solicitud : pendientes) {
+            copia.agregar(solicitud);
+        }
+
+        return copia;
     }
 
     public int cantidadPendientes() {

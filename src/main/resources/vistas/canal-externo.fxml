@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.CanalExternoController"
+            fitToWidth="true"
+            fitToHeight="false"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            pannable="true"
+            style="-fx-background-color: #F4F6F9;">
+
+    <content>
+        <VBox spacing="16.0"
+              style="-fx-background-color: #F4F6F9;">
+
+            <padding>
+                <Insets top="22.0" right="25.0"
+                        bottom="22.0" left="25.0"/>
+            </padding>
+
+            <VBox spacing="5.0">
+                <Label text="CANAL EXTERNO"
+                       style="-fx-font-size: 25px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <Label text="Simulación de solicitudes recibidas desde plataformas de terceros. Las solicitudes se atienden en orden FIFO."
+                       wrapText="true"
+                       style="-fx-font-size: 13px;
+                              -fx-text-fill: #607D8B;"/>
+            </VBox>
+
+            <HBox spacing="12.0">
+                <Label fx:id="lblPendientes"
+                       text="Pendientes: 0"
+                       style="-fx-background-color: #FFF3CD;
+                              -fx-padding: 9;
+                              -fx-background-radius: 6;
+                              -fx-font-weight: bold;"/>
+
+                <Label fx:id="lblProcesadas"
+                       text="Procesadas: 0"
+                       style="-fx-background-color: #DDEBF7;
+                              -fx-padding: 9;
+                              -fx-background-radius: 6;
+                              -fx-font-weight: bold;"/>
+
+                <Label fx:id="lblConflictos"
+                       text="Conflictos: 0"
+                       style="-fx-background-color: #F8D7DA;
+                              -fx-padding: 9;
+                              -fx-background-radius: 6;
+                              -fx-font-weight: bold;"/>
+            </HBox>
+
+            <!-- FORMULARIO -->
+            <VBox spacing="10.0"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 8;">
+
+                <padding>
+                    <Insets top="15" right="15"
+                            bottom="15" left="15"/>
+                </padding>
+
+                <Label text="Registrar solicitud externa"
+                       style="-fx-font-size: 17px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <HBox spacing="10.0"
+                      alignment="CENTER_LEFT">
+
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Código de solicitud"/>
+                        <TextField fx:id="txtCodigo"
+                                   promptText="Ej. EXT-001"/>
+                    </VBox>
+
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Huésped"/>
+                        <ComboBox fx:id="cbHuesped"
+                                  promptText="Seleccionar huésped"
+                                  maxWidth="Infinity"/>
+                    </VBox>
+
+                    <VBox spacing="5" HBox.hgrow="ALWAYS">
+                        <Label text="Apartamento"/>
+                        <ComboBox fx:id="cbApartamento"
+                                  promptText="Seleccionar apartamento"
+                                  maxWidth="Infinity"/>
+                    </VBox>
+
+                </HBox>
+
+                <HBox spacing="10.0"
+                      alignment="CENTER_LEFT">
+
+                    <VBox spacing="5">
+                        <Label text="Fecha de entrada"/>
+                        <DatePicker fx:id="dpEntrada"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Fecha de salida"/>
+                        <DatePicker fx:id="dpSalida"/>
+                    </VBox>
+
+                    <Button text="Recibir solicitud"
+                            onAction="#registrarSolicitud"
+                            prefHeight="34"
+                            style="-fx-background-color: #243447;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;"/>
+
+                </HBox>
+            </VBox>
+
+            <!-- SOLICITUDES PENDIENTES -->
+            <VBox spacing="8.0">
+
+                <HBox alignment="CENTER_LEFT"
+                      spacing="10">
+
+                    <Label text="Cola de solicitudes pendientes (FIFO)"
+                           style="-fx-font-size: 17px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #243447;"/>
+
+                    <Button text="Actualizar"
+                            onAction="#actualizarVista"/>
+
+                    <Button text="Procesar siguiente"
+                            onAction="#procesarSiguiente"
+                            style="-fx-background-color: #2E7D32;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;"/>
+
+                    <Button text="Procesar todas"
+                            onAction="#procesarTodas"
+                            style="-fx-background-color: #1565C0;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;"/>
+
+                </HBox>
+
+                <TableView fx:id="tablaPendientes"
+                           prefHeight="200.0"
+                           minHeight="150.0">
+
+                    <columns>
+                        <TableColumn fx:id="colCodigoPendiente"
+                                     text="Código"
+                                     prefWidth="110"/>
+
+                        <TableColumn fx:id="colHuespedPendiente"
+                                     text="Huésped"
+                                     prefWidth="220"/>
+
+                        <TableColumn fx:id="colApartamentoPendiente"
+                                     text="Apartamento"
+                                     prefWidth="110"/>
+
+                        <TableColumn fx:id="colFechasPendiente"
+                                     text="Estancia"
+                                     prefWidth="190"/>
+                    </columns>
+
+                </TableView>
+            </VBox>
+
+            <!-- HISTORIAL -->
+            <VBox spacing="8.0">
+
+                <Label text="Historial de solicitudes procesadas"
+                       style="-fx-font-size: 17px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #243447;"/>
+
+                <TableView fx:id="tablaHistorial"
+                           prefHeight="260.0"
+                           minHeight="180.0">
+
+                    <columns>
+                        <TableColumn fx:id="colCodigoHistorial"
+                                     text="Código"
+                                     prefWidth="90"/>
+
+                        <TableColumn fx:id="colHuespedHistorial"
+                                     text="Huésped"
+                                     prefWidth="170"/>
+
+                        <TableColumn fx:id="colApartamentoHistorial"
+                                     text="Apartamento"
+                                     prefWidth="100"/>
+
+                        <TableColumn fx:id="colFechasHistorial"
+                                     text="Estancia"
+                                     prefWidth="160"/>
+
+                        <TableColumn fx:id="colEstadoHistorial"
+                                     text="Estado"
+                                     prefWidth="90"/>
+
+                        <TableColumn fx:id="colMotivoHistorial"
+                                     text="Motivo de rechazo"
+                                     prefWidth="260"/>
+                    </columns>
+
+                </TableView>
+            </VBox>
+
+        </VBox>
+    </content>
+</ScrollPane>

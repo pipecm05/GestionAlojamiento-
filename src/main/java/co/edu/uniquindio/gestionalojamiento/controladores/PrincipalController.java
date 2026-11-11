@@ -3,6 +3,7 @@ package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.datos.DatosPrueba;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
+import co.edu.uniquindio.gestionalojamiento.servicios.CanalExternoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.FavoritoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
@@ -33,6 +34,9 @@ public class PrincipalController {
 
     private final ReservaServicio reservaServicio =
             new ReservaServicio();
+
+    private final CanalExternoServicio canalExternoServicio =
+            new CanalExternoServicio(reservaServicio);
 
     private final TarifaServicio tarifaServicio =
             new TarifaServicio();
@@ -132,7 +136,6 @@ public class PrincipalController {
                 );
 
                 alerta.show();
-
             }
 
         } catch (RuntimeException ex) {
@@ -336,6 +339,38 @@ public class PrincipalController {
 
             mostrarError(
                     "No fue posible abrir la gestión de reservas.",
+                    ex
+            );
+        }
+    }
+
+    @FXML
+    private void mostrarCanalExterno() {
+
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/vistas/canal-externo.fxml"
+                    )
+            );
+
+            Parent vista = loader.load();
+
+            CanalExternoController controlador =
+                    loader.getController();
+
+            controlador.configurar(
+                    catalogo,
+                    canalExternoServicio
+            );
+
+            panelPrincipal.setCenter(vista);
+
+        } catch (IOException | RuntimeException ex) {
+
+            mostrarError(
+                    "No fue posible abrir el procesamiento del canal externo.",
                     ex
             );
         }

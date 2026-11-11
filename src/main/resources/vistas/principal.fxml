@@ -120,6 +120,15 @@
                            -fx-alignment: CENTER_LEFT;"/>
 
             <Button
+                    text="Canal externo"
+                    onAction="#mostrarCanalExterno"
+                    maxWidth="Infinity"
+                    style="-fx-background-color: #EAF0F6;
+                           -fx-text-fill: #243447;
+                           -fx-font-size: 14px;
+                           -fx-alignment: CENTER_LEFT;"/>
+
+            <Button
                     text="Calendario de ocupación"
                     onAction="#mostrarCalendario"
                     maxWidth="Infinity"
