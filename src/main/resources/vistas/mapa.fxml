@@ -55,14 +55,27 @@
                                    style="-fx-text-fill: #F59E0B; -fx-font-weight: bold;"/>
                         </FlowPane>
 
-                        <Pane fx:id="panelGrafo"
-                              prefWidth="900"
-                              prefHeight="480"
-                              minHeight="480"
-                              style="-fx-background-color: white;
-                                     -fx-border-color: #DCE3E9;
-                                     -fx-border-radius: 8;
-                                     -fx-background-radius: 8;"/>
+                        <ScrollPane fitToWidth="true"
+                                    fitToHeight="false"
+                                    hbarPolicy="AS_NEEDED"
+                                    vbarPolicy="AS_NEEDED"
+                                    prefViewportWidth="850"
+                                    prefViewportHeight="480"
+                                    style="-fx-background-color: white;
+                                           -fx-background: white;">
+
+                            <content>
+                                <Pane fx:id="panelGrafo"
+                                      prefWidth="900"
+                                      minWidth="900"
+                                      prefHeight="480"
+                                      minHeight="480"
+                                      style="-fx-background-color: white;
+                                             -fx-border-color: #DCE3E9;
+                                             -fx-border-radius: 8;
+                                             -fx-background-radius: 8;"/>
+                            </content>
+                        </ScrollPane>
                     </VBox>
                 </content>
             </TitledPane>

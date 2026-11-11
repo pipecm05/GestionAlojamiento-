@@ -566,51 +566,42 @@ public class MapaController {
         panelGrafo.getChildren().clear();
 
         List<String> ubicaciones = new ArrayList<>();
-
         for (String codigo : rutaServicio.listarUbicaciones()) {
             ubicaciones.add(codigo);
         }
-
         Collections.sort(ubicaciones);
 
         if (ubicaciones.isEmpty()) {
-
-            Text mensaje = new Text(
-                    30, 45,
-                    "No hay ubicaciones registradas."
-            );
-
+            Text mensaje = new Text(30, 45, "No hay ubicaciones registradas.");
             mensaje.setFont(Font.font(16));
             mensaje.setFill(Color.DARKSLATEGRAY);
-
             panelGrafo.getChildren().add(mensaje);
             return;
         }
 
-        double ancho = Math.max(panelGrafo.getWidth(), 1000);
-
-        Map<String, double[]> posiciones =
-                calcularPosiciones(
-                        ubicaciones,
-                        ancho,
-                        panelGrafo.getHeight()
-                );
-
-        double alturaNecesaria = 430;
-
-        for (double[] posicion : posiciones.values()) {
-            alturaNecesaria = Math.max(
-                    alturaNecesaria,
-                    posicion[1] + 90
-            );
+        // Se utiliza el ancho real del panel. No se fuerza un lienzo de 1000 px,
+        // porque el ScrollPane tiene la barra horizontal desactivada.
+        double ancho = panelGrafo.getWidth();
+        if (ancho <= 0) {
+            ancho = panelGrafo.getPrefWidth();
+        }
+        if (ancho <= 0) {
+            ancho = 900;
         }
 
-        double alto = Math.max(
-                panelGrafo.getHeight(),
-                alturaNecesaria
+        Map<String, double[]> posiciones = calcularPosiciones(
+                ubicaciones,
+                ancho,
+                panelGrafo.getHeight()
         );
 
-        panelGrafo.setPrefSize(ancho, alto);
+        double alturaNecesaria = 430;
+        for (double[] posicion : posiciones.values()) {
+            alturaNecesaria = Math.max(alturaNecesaria, posicion[1] + 55);
+        }
+
+        // Solo se ajusta la altura; el ancho queda controlado por el contenedor.
+        panelGrafo.setPrefHeight(Math.max(480, alturaNecesaria));
 
         dibujarConexiones(ubicaciones, posiciones);
         dibujarNodos(ubicaciones, posiciones);
@@ -623,44 +614,22 @@ public class MapaController {
 
         Map<String, double[]> posiciones = new HashMap<>();
 
-        double centroX = ancho / 2;
+        double centroX = ancho / 2.0;
+        double margen = 42;
+        double desplazamientoLateral = Math.min(390, Math.max(90, centroX - margen));
 
-        posiciones.put(
-                RECEPCION,
-                new double[]{centroX, 45}
-        );
-
-        posiciones.put(
-                PASILLO_CENTRAL,
-                new double[]{centroX, 145}
-        );
-
-        posiciones.put(
-                ESCALERA_A,
-                new double[]{centroX - 220, 255}
-        );
-
-        posiciones.put(
-                ESCALERA_B,
-                new double[]{centroX + 220, 255}
-        );
-
-        posiciones.put(
-                ASEO_A,
-                new double[]{centroX - 390, 145}
-        );
-
-        posiciones.put(
-                ASEO_B,
-                new double[]{centroX + 390, 145}
-        );
+        posiciones.put(RECEPCION, new double[]{centroX, 45});
+        posiciones.put(PASILLO_CENTRAL, new double[]{centroX, 145});
+        posiciones.put(ESCALERA_A, new double[]{centroX - 220, 255});
+        posiciones.put(ESCALERA_B, new double[]{centroX + 220, 255});
+        posiciones.put(ASEO_A, new double[]{margen + 29, 145});
+        posiciones.put(ASEO_B, new double[]{ancho - margen - 29, 145});
 
         List<String> apartamentosA = new ArrayList<>();
         List<String> apartamentosB = new ArrayList<>();
         List<String> otros = new ArrayList<>();
 
         for (String codigo : ubicaciones) {
-
             if (posiciones.containsKey(codigo)) {
                 continue;
             }
@@ -668,18 +637,14 @@ public class MapaController {
             boolean conectadoA = false;
             boolean conectadoB = false;
 
-            for (AristaGrafo<String> arista :
-                    rutaServicio.obtenerConexionesDesde(ESCALERA_A)) {
-
+            for (AristaGrafo<String> arista : rutaServicio.obtenerConexionesDesde(ESCALERA_A)) {
                 if (arista.getDestino().getDato().equals(codigo)) {
                     conectadoA = true;
                     break;
                 }
             }
 
-            for (AristaGrafo<String> arista :
-                    rutaServicio.obtenerConexionesDesde(ESCALERA_B)) {
-
+            for (AristaGrafo<String> arista : rutaServicio.obtenerConexionesDesde(ESCALERA_B)) {
                 if (arista.getDestino().getDato().equals(codigo)) {
                     conectadoB = true;
                     break;
@@ -700,49 +665,33 @@ public class MapaController {
         Collections.sort(otros);
 
         int columnas = 3;
-        double separacionX = 105;
-        double separacionY = 110;
+        double separacionX = Math.min(105, Math.max(75, (ancho - 180) / 6.0));
+        double inicioA = Math.max(45, centroX - 320);
+        double inicioB = Math.min(ancho - 45 - (columnas - 1) * separacionX,
+                centroX + 65);
 
         for (int i = 0; i < apartamentosA.size(); i++) {
-
             int columna = i % columnas;
             int fila = i / columnas;
-
-            double x = centroX - 320 + columna * separacionX;
-            double y = 370 + fila * separacionY;
-
-            posiciones.put(
-                    apartamentosA.get(i),
-                    new double[]{x, y}
-            );
+            double x = inicioA + columna * separacionX;
+            double y = 370 + fila * 110;
+            posiciones.put(apartamentosA.get(i), new double[]{x, y});
         }
 
         for (int i = 0; i < apartamentosB.size(); i++) {
-
             int columna = i % columnas;
             int fila = i / columnas;
-
-            double x = centroX + 110 + columna * separacionX;
-            double y = 370 + fila * separacionY;
-
-            posiciones.put(
-                    apartamentosB.get(i),
-                    new double[]{x, y}
-            );
+            double x = inicioB + columna * separacionX;
+            double y = 370 + fila * 110;
+            posiciones.put(apartamentosB.get(i), new double[]{x, y});
         }
 
         for (int i = 0; i < otros.size(); i++) {
-
             int columna = i % columnas;
             int fila = i / columnas;
-
-            double x = centroX - 105 + columna * separacionX;
-            double y = 370 + fila * separacionY;
-
-            posiciones.put(
-                    otros.get(i),
-                    new double[]{x, y}
-            );
+            double x = Math.max(45, centroX - separacionX) + columna * separacionX;
+            double y = 370 + fila * 110;
+            posiciones.put(otros.get(i), new double[]{x, y});
         }
 
         return posiciones;
