@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.LoginController"
+      alignment="CENTER"
+      spacing="16"
+      prefWidth="520"
+      prefHeight="620"
+      style="-fx-background-color: #F4F6F9;">
+
+    <padding>
+        <Insets top="42" right="48" bottom="42" left="48"/>
+    </padding>
+
+    <Label text="APARTA-SUITES UQ"
+           style="-fx-font-size: 25px;
+                  -fx-font-weight: bold;
+                  -fx-text-fill: #243447;"/>
+
+    <Label text="Sistema de Gestión de Alojamiento"
+           style="-fx-font-size: 14px;
+                  -fx-text-fill: #607D8B;"/>
+
+    <Region prefHeight="15"/>
+
+    <VBox spacing="8" maxWidth="340">
+
+        <Label text="Correo electrónico"/>
+
+        <TextField fx:id="txtCorreo"
+                   promptText="Ingresa tu correo"
+                   prefHeight="40"/>
+
+        <Label text="Contraseña"/>
+
+        <PasswordField fx:id="txtContrasena"
+                       promptText="Ingresa tu contraseña"
+                       prefHeight="40"
+                       onAction="#iniciarSesion"/>
+
+        <Label fx:id="lblMensaje"
+               wrapText="true"
+               style="-fx-text-fill: #C62828;"/>
+
+        <Button text="Iniciar sesión"
+                onAction="#iniciarSesion"
+                maxWidth="Infinity"
+                prefHeight="42"
+                style="-fx-background-color: #243447;
+                       -fx-text-fill: white;
+                       -fx-font-weight: bold;"/>
+
+        <Button text="Crear cuenta de huésped"
+                onAction="#registrarCuenta"
+                maxWidth="Infinity"
+                prefHeight="40"
+                style="-fx-background-color: #E3F2FD;
+                       -fx-text-fill: #1565C0;"/>
+
+    </VBox>
+
+    <Label text="Acceso administrativo disponible para el personal autorizado."
+           wrapText="true"
+           style="-fx-font-size: 11px;
+                  -fx-text-fill: #78909C;"/>
+
+</VBox>

@@ -38,6 +38,16 @@
                     text="Aparta-Suites UQ"
                     style="-fx-font-size: 14px;
                            -fx-text-fill: #CFD8DC;"/>
+
+            <HBox HBox.hgrow="ALWAYS"/>
+
+            <Button
+                    text="Cerrar sesión"
+                    onAction="#cerrarSesion"
+                    style="-fx-background-color: #C62828;
+                           -fx-text-fill: white;
+                           -fx-font-weight: bold;
+                           -fx-cursor: hand;"/>
         </HBox>
     </top>
 
@@ -53,6 +63,7 @@
 
             <content>
                 <VBox
+                        fx:id="menuLateral"
                         spacing="8.0"
                         prefWidth="210.0"
                         style="-fx-background-color: white;">

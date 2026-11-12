@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
@@ -26,6 +25,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.util.StringConverter;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -36,6 +36,8 @@ public class PortalHuespedController {
     private ReservaServicio reservaServicio;
     private FavoritoServicio favoritoServicio;
     private TarifaServicio tarifaServicio;
+
+    private Huesped huespedAutenticado;
 
     private final ObservableList<Apartamento> alojamientos =
             FXCollections.observableArrayList();
@@ -162,6 +164,10 @@ public class PortalHuespedController {
         limpiarResumenTarifa();
     }
 
+    /*
+     * Configuración utilizada cuando no se recibe
+     * un huésped autenticado.
+     */
     public void configurar(
             CatalogoAlojamiento catalogo,
             ReservaServicio reservaServicio,
@@ -169,12 +175,34 @@ public class PortalHuespedController {
             TarifaServicio tarifaServicio
     ) {
 
+        configurar(
+                catalogo,
+                reservaServicio,
+                favoritoServicio,
+                tarifaServicio,
+                null
+        );
+    }
+
+    /*
+     * Configuración utilizada desde PrincipalController.
+     * Recibe el huésped que inició sesión.
+     */
+    public void configurar(
+            CatalogoAlojamiento catalogo,
+            ReservaServicio reservaServicio,
+            FavoritoServicio favoritoServicio,
+            TarifaServicio tarifaServicio,
+            Huesped huespedAutenticado
+    ) {
+
         this.catalogo = catalogo;
         this.reservaServicio = reservaServicio;
         this.favoritoServicio = favoritoServicio;
         this.tarifaServicio = tarifaServicio;
+        this.huespedAutenticado = huespedAutenticado;
 
-        cargarHuespedes();
+        cargarHuespedes(huespedAutenticado);
     }
 
     private void configurarColumnas() {
@@ -303,19 +331,33 @@ public class PortalHuespedController {
         tablaFavoritos.setItems(favoritos);
     }
 
-    private void cargarHuespedes() {
+    private void cargarHuespedes(Huesped huespedAutenticado) {
 
         cmbHuesped.getItems().clear();
 
-        for (Huesped huesped : catalogo.listarHuespedes()) {
-            cmbHuesped.getItems().add(huesped);
+        if (huespedAutenticado != null) {
+
+            cmbHuesped.getItems().add(huespedAutenticado);
+
+            cmbHuesped.setVisible(false);
+            cmbHuesped.setManaged(false);
+
+        } else {
+
+            cmbHuesped.setVisible(true);
+            cmbHuesped.setManaged(true);
+
+            for (Huesped huesped : catalogo.listarHuespedes()) {
+                cmbHuesped.getItems().add(huesped);
+            }
         }
 
         cmbHuesped.setConverter(
-                new javafx.util.StringConverter<Huesped>() {
+                new StringConverter<Huesped>() {
 
                     @Override
                     public String toString(Huesped huesped) {
+
                         if (huesped == null) {
                             return "";
                         }
@@ -335,7 +377,13 @@ public class PortalHuespedController {
         cmbHuesped.setOnAction(event -> actualizarPerfil());
 
         if (!cmbHuesped.getItems().isEmpty()) {
+
             cmbHuesped.getSelectionModel().selectFirst();
+
+            actualizarPerfil();
+
+        } else {
+
             actualizarPerfil();
         }
     }
@@ -345,6 +393,7 @@ public class PortalHuespedController {
         Huesped huesped = cmbHuesped.getValue();
 
         if (huesped == null) {
+
             lblBienvenida.setText(
                     "Selecciona un huésped para comenzar."
             );
@@ -352,7 +401,9 @@ public class PortalHuespedController {
             reservas.clear();
             favoritos.clear();
             detallesTarifa.clear();
+
             limpiarResumenTarifa();
+
             return;
         }
 
@@ -362,7 +413,9 @@ public class PortalHuespedController {
 
         cargarReservas();
         cargarFavoritos();
+
         detallesTarifa.clear();
+
         limpiarResumenTarifa();
     }
 
@@ -372,10 +425,12 @@ public class PortalHuespedController {
         try {
 
             if (cmbHuesped.getValue() == null) {
+
                 mostrarAlerta(
                         Alert.AlertType.WARNING,
-                        "Selecciona un huésped."
+                        "No se encontró un huésped asociado a la sesión."
                 );
+
                 return;
             }
 
@@ -383,26 +438,32 @@ public class PortalHuespedController {
             LocalDate salida = dpSalida.getValue();
 
             if (entrada == null || salida == null) {
+
                 mostrarAlerta(
                         Alert.AlertType.WARNING,
                         "Selecciona las fechas de entrada y salida."
                 );
+
                 return;
             }
 
             if (!entrada.isBefore(salida)) {
+
                 mostrarAlerta(
                         Alert.AlertType.WARNING,
                         "La salida debe ser posterior a la entrada."
                 );
+
                 return;
             }
 
             if (entrada.isBefore(LocalDate.now())) {
+
                 mostrarAlerta(
                         Alert.AlertType.WARNING,
                         "La fecha de entrada no puede estar en el pasado."
                 );
+
                 return;
             }
 
@@ -439,6 +500,7 @@ public class PortalHuespedController {
             );
 
             if (alojamientos.isEmpty()) {
+
                 mostrarAlerta(
                         Alert.AlertType.INFORMATION,
                         "No se encontraron apartamentos disponibles "
@@ -465,18 +527,22 @@ public class PortalHuespedController {
                 tablaAlojamientos.getSelectionModel().getSelectedItem();
 
         if (huesped == null) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
-                    "Selecciona un huésped."
+                    "No se encontró un huésped asociado a la sesión."
             );
+
             return;
         }
 
         if (apartamento == null) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
                     "Selecciona un apartamento disponible."
             );
+
             return;
         }
 
@@ -485,19 +551,23 @@ public class PortalHuespedController {
 
         if (entrada == null || salida == null
                 || !entrada.isBefore(salida)) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
                     "Selecciona un rango de fechas válido."
             );
+
             return;
         }
 
         if (spPersonas.getValue() > apartamento.getCapacidadMaxima()) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
                     "La cantidad de personas supera la capacidad "
                             + "del apartamento."
             );
+
             return;
         }
 
@@ -527,8 +597,9 @@ public class PortalHuespedController {
                             + "Código: " + reserva.getCodigo()
                             + "\nApartamento: " + apartamento.getNombre()
                             + "\nEstado: " + reserva.getEstado()
-                            + "\n\nSelecciona la reserva en «Mis reservas» "
-                            + "para consultar el precio y registrar el anticipo."
+                            + "\n\nEl administrador debe verificar y "
+                            + "registrar el anticipo del 30 % para "
+                            + "confirmar la reserva."
             );
 
             buscarAlojamientos();
@@ -546,6 +617,7 @@ public class PortalHuespedController {
     private void mostrarDesglose(Reserva reserva) {
 
         detallesTarifa.clear();
+
         limpiarResumenTarifa();
 
         if (reserva == null || tarifaServicio == null) {
@@ -574,15 +646,24 @@ public class PortalHuespedController {
             double saldo = Math.max(0, total - pagosRegistrados);
 
             lblTotalReserva.setText(formatoMoneda(total));
-            lblAnticipo.setText(formatoMoneda(anticipoRequerido));
-            lblSaldoPendiente.setText(formatoMoneda(saldo));
+
+            lblAnticipo.setText(
+                    formatoMoneda(anticipoRequerido)
+            );
+
+            lblSaldoPendiente.setText(
+                    formatoMoneda(saldo)
+            );
 
             if (reserva.getEstado().toString().equals("CONFIRMADA")) {
+
                 lblEstadoPago.setText(
                         "Reserva confirmada. Pagos registrados: "
                                 + formatoMoneda(pagosRegistrados)
                 );
+
             } else {
+
                 lblEstadoPago.setText(
                         "Anticipo registrado: "
                                 + formatoMoneda(pagosRegistrados)
@@ -599,94 +680,23 @@ public class PortalHuespedController {
         }
     }
 
+    /*
+     * El huésped no puede registrar pagos ni confirmar
+     * reservas desde el portal.
+     *
+     * Se conserva este método para evitar errores si el FXML
+     * todavía tiene conectado el botón anterior.
+     */
     @FXML
     private void pagarAnticipoYConfirmar() {
 
-        Reserva reserva =
-                tablaReservas.getSelectionModel().getSelectedItem();
-
-        if (reserva == null) {
-            mostrarAlerta(
-                    Alert.AlertType.WARNING,
-                    "Selecciona una reserva para continuar."
-            );
-            return;
-        }
-
-        try {
-
-            if (reserva.getCanal() != CanalReserva.PORTAL) {
-                mostrarAlerta(
-                        Alert.AlertType.WARNING,
-                        "El anticipo del 30 % solo aplica a reservas "
-                                + "realizadas desde el portal."
-                );
-                return;
-            }
-
-            if (!reserva.getEstado().toString().equals("PENDIENTE")) {
-                mostrarAlerta(
-                        Alert.AlertType.INFORMATION,
-                        "Esta reserva no se encuentra pendiente."
-                );
-                return;
-            }
-
-            FolioServicio folio =
-                    reservaServicio.obtenerFolio(reserva.getCodigo());
-
-            double anticipoRequerido =
-                    folio.calcularAnticipoPortal(tarifaServicio);
-
-            double pagosRegistrados = folio.obtenerPagosNetos();
-
-            double faltante = anticipoRequerido - pagosRegistrados;
-
-            if (faltante > 0.001) {
-
-                String codigoPago =
-                        "PAGO-" + System.currentTimeMillis();
-
-                reservaServicio.registrarAbonoPortal(
-                        reserva.getCodigo(),
-                        codigoPago,
-                        faltante
-                );
-            }
-
-            reservaServicio.confirmarReserva(
-                    reserva.getCodigo(),
-                    tarifaServicio
-            );
-
-            reservaServicio.registrarCargoAlojamiento(
-                    reserva.getCodigo(),
-                    tarifaServicio
-            );
-
-            cargarReservas();
-            tablaReservas.getSelectionModel().select(reserva);
-            mostrarDesglose(reserva);
-
-            mostrarAlerta(
-                    Alert.AlertType.INFORMATION,
-                    "La reserva fue confirmada correctamente.\n\n"
-                            + "Código: " + reserva.getCodigo()
-                            + "\nAnticipo requerido: "
-                            + formatoMoneda(anticipoRequerido)
-                            + "\nEstado: " + reserva.getEstado()
-            );
-
-        } catch (RuntimeException ex) {
-
-            mostrarAlerta(
-                    Alert.AlertType.ERROR,
-                    "No fue posible completar el pago y la confirmación:\n"
-                            + ex.getMessage()
-            );
-
-            mostrarDesglose(reserva);
-        }
+        mostrarAlerta(
+                Alert.AlertType.INFORMATION,
+                "El pago del anticipo no se realiza desde el portal.\n\n"
+                        + "Tu solicitud permanece pendiente hasta que "
+                        + "el administrador verifique y registre "
+                        + "el anticipo correspondiente."
+        );
     }
 
     @FXML
@@ -698,10 +708,13 @@ public class PortalHuespedController {
                 tablaAlojamientos.getSelectionModel().getSelectedItem();
 
         if (huesped == null || apartamento == null) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
-                    "Selecciona un huésped y un apartamento."
+                    "Selecciona un apartamento para agregarlo "
+                            + "a favoritos."
             );
+
             return;
         }
 
@@ -713,13 +726,16 @@ public class PortalHuespedController {
             );
 
             if (agregado) {
+
                 cargarFavoritos();
 
                 mostrarAlerta(
                         Alert.AlertType.INFORMATION,
                         "El apartamento se agregó a favoritos."
                 );
+
             } else {
+
                 mostrarAlerta(
                         Alert.AlertType.INFORMATION,
                         "Este apartamento ya está en tus favoritos."
@@ -745,10 +761,12 @@ public class PortalHuespedController {
                 tablaFavoritos.getSelectionModel().getSelectedItem();
 
         if (huesped == null || apartamento == null) {
+
             mostrarAlerta(
                     Alert.AlertType.WARNING,
                     "Selecciona un favorito para eliminar."
             );
+
             return;
         }
 
@@ -758,6 +776,7 @@ public class PortalHuespedController {
         );
 
         if (eliminado) {
+
             cargarFavoritos();
 
             mostrarAlerta(
@@ -785,6 +804,7 @@ public class PortalHuespedController {
                         .equals(huesped.getDocumento())) {
 
                     reservas.add(reserva);
+
                     break;
                 }
             }
@@ -809,6 +829,7 @@ public class PortalHuespedController {
         for (Favorito favorito : lista) {
 
             if (favorito.getAlojamiento() instanceof Apartamento) {
+
                 favoritos.add(
                         (Apartamento) favorito.getAlojamiento()
                 );
@@ -831,6 +852,7 @@ public class PortalHuespedController {
         }
 
         if (lblEstadoPago != null) {
+
             lblEstadoPago.setText(
                     "Selecciona una reserva para consultar sus valores."
             );
@@ -852,9 +874,11 @@ public class PortalHuespedController {
     ) {
 
         Alert alerta = new Alert(tipo);
+
         alerta.setTitle("Portal del huésped");
         alerta.setHeaderText(null);
         alerta.setContentText(mensaje);
+
         alerta.showAndWait();
     }
 }

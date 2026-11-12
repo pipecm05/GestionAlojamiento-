@@ -1,7 +1,10 @@
-
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
-import co.edu.uniquindio.gestionalojamiento.datos.DatosPrueba;
+import co.edu.uniquindio.gestionalojamiento.MainApp;
+import co.edu.uniquindio.gestionalojamiento.ContextoAplicacion;
+import co.edu.uniquindio.gestionalojamiento.modelo.CuentaUsuario;
+import co.edu.uniquindio.gestionalojamiento.enums.RolUsuario;
+import co.edu.uniquindio.gestionalojamiento.servicios.Sesion;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.CanalExternoServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.EmpleadoServicio;
@@ -17,8 +20,10 @@ import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
@@ -30,28 +35,28 @@ import java.time.LocalDateTime;
 public class PrincipalController {
 
     private final CatalogoAlojamiento catalogo =
-            new CatalogoAlojamiento();
+            ContextoAplicacion.getInstancia().getCatalogo();
 
     private final ReservaServicio reservaServicio =
-            new ReservaServicio();
+            ContextoAplicacion.getInstancia().getReservaServicio();
 
     private final CanalExternoServicio canalExternoServicio =
-            new CanalExternoServicio(reservaServicio);
+            ContextoAplicacion.getInstancia().getCanalExternoServicio();
 
     private final TarifaServicio tarifaServicio =
-            new TarifaServicio();
+            ContextoAplicacion.getInstancia().getTarifaServicio();
 
     private final EmpleadoServicio empleadoServicio =
-            new EmpleadoServicio();
+            ContextoAplicacion.getInstancia().getEmpleadoServicio();
 
     private final TurnoServicio turnoServicio =
-            new TurnoServicio();
+            ContextoAplicacion.getInstancia().getTurnoServicio();
 
     private final FavoritoServicio favoritoServicio =
-            new FavoritoServicio();
+            ContextoAplicacion.getInstancia().getFavoritoServicio();
 
     private final RutaServicio rutaServicio =
-            new RutaServicio();
+            ContextoAplicacion.getInstancia().getRutaServicio();
 
     private Timeline verificadorVencimientos;
 
@@ -62,29 +67,107 @@ public class PrincipalController {
     private VBox contenidoCentral;
 
     @FXML
-    public void initialize() {
+    private VBox menuLateral;
 
-        try {
+    private CuentaUsuario cuentaUsuario;
 
-            DatosPrueba.cargarDatos(
-                    catalogo,
-                    reservaServicio,
-                    tarifaServicio,
-                    empleadoServicio,
-                    turnoServicio,
-                    favoritoServicio
-            );
+    public void configurarCuenta(CuentaUsuario cuentaUsuario) {
 
-        } catch (RuntimeException ex) {
+        this.cuentaUsuario = cuentaUsuario;
 
-            System.err.println(
-                    "No fue posible cargar los datos de prueba: "
-                            + ex.getMessage()
-            );
+        if (cuentaUsuario != null
+                && cuentaUsuario.getHuesped() != null) {
 
-            ex.printStackTrace();
+            String documento =
+                    cuentaUsuario.getHuesped().getDocumento();
+
+            if (catalogo.buscarHuesped(documento) == null) {
+                catalogo.registrarHuesped(
+                        cuentaUsuario.getHuesped()
+                );
+            }
         }
 
+        aplicarPermisos();
+
+        if (cuentaUsuario != null
+                && !cuentaUsuario.esAdministrador()) {
+
+            mostrarPortalHuesped();
+
+        } else {
+
+            mostrarInicio();
+        }
+    }
+
+    private void aplicarPermisos() {
+
+        boolean administrador =
+                cuentaUsuario != null
+                        && cuentaUsuario.esAdministrador();
+
+        if (menuLateral == null) {
+            return;
+        }
+
+        for (Node nodo : menuLateral.getChildren()) {
+
+            if (nodo instanceof Button boton) {
+
+                String texto = boton.getText();
+
+                boolean permitido =
+                        administrador
+                                || "Inicio".equals(texto)
+                                || "Portal del huésped".equals(texto);
+
+                boton.setVisible(permitido);
+                boton.setManaged(permitido);
+            }
+        }
+    }
+
+    private boolean requiereAdministrador() {
+
+        if (cuentaUsuario != null
+                && cuentaUsuario.getRol()
+                == RolUsuario.ADMINISTRADOR) {
+
+            return true;
+        }
+
+        Alert alerta = new Alert(Alert.AlertType.WARNING);
+
+        alerta.setTitle("Acceso restringido");
+        alerta.setHeaderText(
+                "Esta función es exclusiva del administrador."
+        );
+        alerta.setContentText(
+                "Inicia sesión con una cuenta administrativa para continuar."
+        );
+
+        alerta.showAndWait();
+
+        return false;
+    }
+
+    @FXML
+    private void cerrarSesion() {
+
+        if (verificadorVencimientos != null) {
+            verificadorVencimientos.stop();
+        }
+
+        Sesion.cerrar();
+        MainApp.mostrarLogin();
+    }
+
+    @FXML
+    public void initialize() {
+
+        // Los servicios y los datos de prueba se inicializan una sola vez
+        // en ContextoAplicacion y se comparten entre todas las sesiones.
         mostrarInicio();
         iniciarVerificacionVencimientos();
     }
@@ -136,6 +219,7 @@ public class PrincipalController {
                 );
 
                 alerta.show();
+
             }
 
         } catch (RuntimeException ex) {
@@ -162,6 +246,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarAlojamientos() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -192,6 +278,8 @@ public class PrincipalController {
     @FXML
     private void mostrarHuespedes() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -221,6 +309,8 @@ public class PrincipalController {
     @FXML
     private void mostrarEmpleados() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -249,6 +339,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarTurnos() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -282,6 +374,8 @@ public class PrincipalController {
     @FXML
     private void mostrarFavoritos() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -313,6 +407,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarReservas() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -347,6 +443,8 @@ public class PrincipalController {
     @FXML
     private void mostrarCanalExterno() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -378,6 +476,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarCalendario() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -411,6 +511,8 @@ public class PrincipalController {
     @FXML
     private void mostrarFolio() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -439,6 +541,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarPreparacion() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -472,6 +576,8 @@ public class PrincipalController {
     @FXML
     private void mostrarTemporadas() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -500,6 +606,8 @@ public class PrincipalController {
 
     @FXML
     private void mostrarReportes() {
+
+        if (!requiereAdministrador()) return;
 
         try {
 
@@ -533,6 +641,8 @@ public class PrincipalController {
     @FXML
     private void mostrarMapa() {
 
+        if (!requiereAdministrador()) return;
+
         try {
 
             FXMLLoader loader = new FXMLLoader(
@@ -562,7 +672,6 @@ public class PrincipalController {
         }
     }
 
-    // NUEVO: abrir el portal del huésped
     @FXML
     private void mostrarPortalHuesped() {
 
@@ -583,7 +692,11 @@ public class PrincipalController {
                     catalogo,
                     reservaServicio,
                     favoritoServicio,
-                    tarifaServicio
+                    tarifaServicio,
+                    cuentaUsuario != null
+                            && cuentaUsuario.getHuesped() != null
+                            ? cuentaUsuario.getHuesped()
+                            : null
             );
 
             panelPrincipal.setCenter(vista);
