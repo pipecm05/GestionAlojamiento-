@@ -3,6 +3,8 @@ package co.edu.uniquindio.gestionalojamiento.controladores;
 import co.edu.uniquindio.gestionalojamiento.MainApp;
 import co.edu.uniquindio.gestionalojamiento.ContextoAplicacion;
 import co.edu.uniquindio.gestionalojamiento.modelo.CuentaUsuario;
+import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoSolicitudCancelacion;
 import co.edu.uniquindio.gestionalojamiento.enums.RolUsuario;
 import co.edu.uniquindio.gestionalojamiento.servicios.Sesion;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
@@ -25,8 +27,20 @@ import javafx.scene.Parent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.RowConstraints;
+import javafx.geometry.Pos;
+import java.util.List;
 import javafx.util.Duration;
 
 import java.io.IOException;
@@ -90,15 +104,7 @@ public class PrincipalController {
 
         aplicarPermisos();
 
-        if (cuentaUsuario != null
-                && !cuentaUsuario.esAdministrador()) {
-
-            mostrarPortalHuesped();
-
-        } else {
-
-            mostrarInicio();
-        }
+        mostrarInicio();
     }
 
     private void aplicarPermisos() {
@@ -116,23 +122,20 @@ public class PrincipalController {
             if (nodo instanceof Button boton) {
 
                 String texto = boton.getText();
-
-                boolean esPortalHuesped =
-                        "Portal del huésped".equals(texto);
-
-                boolean permitido;
-
-                if (administrador) {
-                    // El administrador no necesita entrar al portal del huésped.
-                    permitido = !esPortalHuesped;
-                } else {
-                    // El huésped conserva el acceso a su propio portal.
-                    permitido = "Inicio".equals(texto)
-                            || esPortalHuesped;
-                }
+                boolean esPortalHuesped = texto.contains("Portal del huésped");
+                boolean permitido = administrador
+                        ? !esPortalHuesped
+                        : texto.contains("Inicio") || esPortalHuesped;
 
                 boton.setVisible(permitido);
                 boton.setManaged(permitido);
+
+            } else if (nodo instanceof Label etiqueta
+                    && etiqueta.getText() != null
+                    && etiqueta.getText().equals("ADMINISTRACIÓN")) {
+
+                etiqueta.setVisible(administrador);
+                etiqueta.setManaged(administrador);
             }
         }
     }
@@ -244,13 +247,228 @@ public class PrincipalController {
 
     @FXML
     private void mostrarInicio() {
+        if (cuentaUsuario != null && !cuentaUsuario.esAdministrador()) {
+            mostrarInicioHuesped();
+        } else {
+            mostrarInicioAdministrador();
+        }
+    }
 
-        cambiarContenido(
-                "Panel principal",
-                "Sistema de Gestión de Alojamiento",
-                "Bienvenido. Selecciona una opción "
-                        + "del menú para comenzar."
+    private void mostrarInicioAdministrador() {
+        VBox pagina = crearPaginaDashboard();
+
+        Label etiqueta = crearEtiqueta("PANEL DE CONTROL", 12, "#6B8298", true);
+        Label titulo = crearEtiqueta("Bienvenido al centro de gestión", 29, "#1E304B", true);
+        Label descripcion = crearEtiqueta(
+                "Administra alojamientos, reservas y huéspedes desde un solo lugar.",
+                14, "#68798B", false);
+        VBox encabezado = new VBox(7, etiqueta, titulo, descripcion);
+        encabezado.setPadding(new Insets(4, 0, 8, 0));
+
+        int totalAlojamientos = catalogo.cantidadApartamentos();
+        int totalHuespedes = catalogo.cantidadHuespedes();
+        int totalReservas = 0;
+        for (Reserva reserva : reservaServicio.listarReservas()) {
+            totalReservas++;
+        }
+        int solicitudesPendientes = 0;
+        for (var solicitud : reservaServicio.listarSolicitudesCancelacion()) {
+            if (solicitud.getEstado() == EstadoSolicitudCancelacion.PENDIENTE) {
+                solicitudesPendientes++;
+            }
+        }
+
+        FlowPane metricas = new FlowPane();
+        metricas.setHgap(15);
+        metricas.setVgap(15);
+        metricas.getChildren().addAll(
+                crearTarjetaMetrica("ALOJAMIENTOS", String.valueOf(totalAlojamientos), "Unidades registradas", "⌂", "#E8F0FA", "#315A83"),
+                crearTarjetaMetrica("HUÉSPEDES", String.valueOf(totalHuespedes), "Clientes registrados", "♙", "#E8F5F0", "#28785B"),
+                crearTarjetaMetrica("RESERVAS", String.valueOf(totalReservas), "Reservas en el sistema", "▣", "#FFF3E5", "#B66A25"),
+                crearTarjetaMetrica("CANCELACIONES", String.valueOf(solicitudesPendientes), "Solicitudes por revisar", "↺", "#FCEBEC", "#B5474D")
         );
+
+        Label accesosTitulo = crearEtiqueta("Accesos rápidos", 20, "#1E304B", true);
+        Label accesosSubtitulo = crearEtiqueta("Continúa con las tareas principales del alojamiento.", 13, "#718096", false);
+        FlowPane accesos = new FlowPane();
+        accesos.setHgap(15);
+        accesos.setVgap(15);
+        accesos.getChildren().addAll(
+                crearTarjetaAcceso("Gestionar alojamientos", "Registra y actualiza los apartamentos.", "⌂", this::mostrarAlojamientos),
+                crearTarjetaAcceso("Gestionar reservas", "Consulta reservas y solicitudes de cancelación.", "▣", this::mostrarReservas),
+                crearTarjetaAcceso("Gestionar huéspedes", "Consulta la información de tus huéspedes.", "♙", this::mostrarHuespedes),
+                crearTarjetaAcceso("Consultar reportes", "Revisa los indicadores de operación.", "▤", this::mostrarReportes)
+        );
+
+        VBox actividad = crearPanelBlanco();
+        Label actividadTitulo = crearEtiqueta("Reservas recientes", 18, "#1E304B", true);
+        actividad.getChildren().add(actividadTitulo);
+        int mostradas = 0;
+        for (Reserva reserva : reservaServicio.listarReservas()) {
+            if (mostradas >= 5) break;
+            HBox fila = new HBox(12);
+            fila.setAlignment(Pos.CENTER_LEFT);
+            Label codigo = crearEtiqueta(reserva.getCodigo(), 13, "#243B53", true);
+            Label apartamento = crearEtiqueta("Apartamento " + reserva.getApartamento().getCodigo(), 12, "#718096", false);
+            Region espacio = new Region();
+            HBox.setHgrow(espacio, Priority.ALWAYS);
+            Label estado = crearEtiqueta(reserva.getEstado().toString(), 11, "#315A83", true);
+            fila.getChildren().addAll(codigo, apartamento, espacio, estado);
+            fila.setPadding(new Insets(10, 0, 10, 0));
+            actividad.getChildren().addAll(new Separator(), fila);
+            mostradas++;
+        }
+        if (mostradas == 0) {
+            actividad.getChildren().add(crearEtiqueta("Todavía no hay reservas registradas.", 13, "#718096", false));
+        }
+
+        pagina.getChildren().addAll(encabezado, metricas, accesosTitulo, accesosSubtitulo, accesos, actividad);
+        panelPrincipal.setCenter(crearContenedorDesplazable(pagina));
+    }
+
+    private void mostrarInicioHuesped() {
+        VBox pagina = crearPaginaDashboard();
+        String nombre = "huésped";
+        if (cuentaUsuario != null && cuentaUsuario.getHuesped() != null) {
+            nombre = cuentaUsuario.getHuesped().getNombres();
+        }
+
+        StackPane banner = new StackPane();
+        banner.setAlignment(Pos.CENTER_LEFT);
+        banner.setPadding(new Insets(30));
+        banner.setMinHeight(205);
+        banner.setStyle("-fx-background-color: linear-gradient(to right, #1E304B, #355B78); -fx-background-radius: 18;");
+        VBox textosBanner = new VBox(10);
+        Label bienvenida = crearEtiqueta("BIENVENIDO A APARTA-SUITES UQ", 11, "#D7E5F1", true);
+        Label titulo = crearEtiqueta("Hola, " + nombre + " 👋", 30, "#FFFFFF", true);
+        Label mensaje = crearEtiqueta("Tu próxima estadía comienza aquí. Encuentra un espacio\npara descansar, disfrutar y sentirte como en casa.", 14, "#E5EDF4", false);
+        Button explorar = crearBotonPrincipal("Explorar alojamientos", this::mostrarPortalHuesped);
+        textosBanner.getChildren().addAll(bienvenida, titulo, mensaje, explorar);
+        banner.getChildren().add(textosBanner);
+
+        int misReservas = 0;
+        int misSolicitudes = 0;
+        String documento = cuentaUsuario != null && cuentaUsuario.getHuesped() != null
+                ? cuentaUsuario.getHuesped().getDocumento() : null;
+        if (documento != null) {
+            for (Reserva reserva : reservaServicio.listarReservas()) {
+                if (reserva.getHuesped() != null && documento.equals(reserva.getHuesped().getDocumento())) {
+                    misReservas++;
+                }
+            }
+            for (var solicitud : reservaServicio.listarSolicitudesCancelacion()) {
+                if (solicitud.getReserva() != null && solicitud.getReserva().getHuesped() != null
+                        && documento.equals(solicitud.getReserva().getHuesped().getDocumento())) {
+                    misSolicitudes++;
+                }
+            }
+        }
+
+        FlowPane metricas = new FlowPane();
+        metricas.setHgap(15);
+        metricas.setVgap(15);
+        metricas.getChildren().addAll(
+                crearTarjetaMetrica("MIS RESERVAS", String.valueOf(misReservas), "Reservas registradas", "▣", "#E8F0FA", "#315A83"),
+                crearTarjetaMetrica("MIS SOLICITUDES", String.valueOf(misSolicitudes), "Solicitudes de cancelación", "↺", "#FFF3E5", "#B66A25"),
+                crearTarjetaMetrica("ALOJAMIENTOS", String.valueOf(catalogo.cantidadApartamentos()), "Opciones disponibles en el catálogo", "⌂", "#E8F5F0", "#28785B")
+        );
+
+        Label tituloAccesos = crearEtiqueta("¿Qué deseas hacer hoy?", 20, "#1E304B", true);
+        Label subtituloAccesos = crearEtiqueta("Accede rápidamente a los servicios de tu portal.", 13, "#718096", false);
+        FlowPane accesos = new FlowPane();
+        accesos.setHgap(15);
+        accesos.setVgap(15);
+        accesos.getChildren().addAll(
+                crearTarjetaAcceso("Buscar alojamiento", "Consulta disponibilidad y encuentra tu espacio ideal.", "⌂", this::mostrarPortalHuesped),
+                crearTarjetaAcceso("Mis reservas", "Consulta tus reservas, estados y pagos.", "▣", this::mostrarPortalHuesped),
+                crearTarjetaAcceso("Mis favoritos", "Revisa los alojamientos que guardaste.", "♡", this::mostrarPortalHuesped)
+        );
+
+        pagina.getChildren().addAll(banner, metricas, tituloAccesos, subtituloAccesos, accesos);
+        panelPrincipal.setCenter(crearContenedorDesplazable(pagina));
+    }
+
+    private VBox crearPaginaDashboard() {
+        VBox pagina = new VBox(22);
+        pagina.setPadding(new Insets(30, 34, 36, 34));
+        pagina.setStyle("-fx-background-color: #F3F6FA;");
+        return pagina;
+    }
+
+    private ScrollPane crearContenedorDesplazable(VBox contenido) {
+        ScrollPane scroll = new ScrollPane(contenido);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background: #F3F6FA; -fx-background-color: #F3F6FA; -fx-border-color: transparent;");
+        return scroll;
+    }
+
+    private VBox crearTarjetaMetrica(String titulo, String valor, String detalle,
+                                     String simbolo, String fondoIcono, String colorIcono) {
+        VBox tarjeta = crearPanelBlanco();
+        tarjeta.setSpacing(8);
+        tarjeta.setPrefWidth(205);
+        tarjeta.setMinWidth(175);
+        HBox superior = new HBox();
+        superior.setAlignment(Pos.CENTER_LEFT);
+        Label icono = crearEtiqueta(simbolo, 22, colorIcono, true);
+        StackPane circulo = new StackPane(icono);
+        circulo.setMinSize(42, 42);
+        circulo.setMaxSize(42, 42);
+        circulo.setStyle("-fx-background-color: " + fondoIcono + "; -fx-background-radius: 12;");
+        Region espacio = new Region();
+        HBox.setHgrow(espacio, Priority.ALWAYS);
+        superior.getChildren().addAll(circulo, espacio);
+        tarjeta.getChildren().addAll(superior,
+                crearEtiqueta(titulo, 11, "#718096", true),
+                crearEtiqueta(valor, 27, "#1E304B", true),
+                crearEtiqueta(detalle, 11, "#8795A5", false));
+        return tarjeta;
+    }
+
+    private VBox crearTarjetaAcceso(String titulo, String descripcion, String simbolo, Runnable accion) {
+        VBox tarjeta = crearPanelBlanco();
+        tarjeta.setSpacing(10);
+        tarjeta.setPrefWidth(245);
+        tarjeta.setMinHeight(145);
+        Label icono = crearEtiqueta(simbolo, 23, "#315A83", true);
+        StackPane iconoFondo = new StackPane(icono);
+        iconoFondo.setAlignment(Pos.CENTER);
+        iconoFondo.setMinSize(44, 44);
+        iconoFondo.setMaxSize(44, 44);
+        iconoFondo.setStyle("-fx-background-color: #E8F0FA; -fx-background-radius: 12;");
+        tarjeta.getChildren().addAll(iconoFondo,
+                crearEtiqueta(titulo, 14, "#243B53", true),
+                crearEtiqueta(descripcion, 11, "#718096", false));
+        Button abrir = new Button("Abrir →");
+        abrir.setOnAction(e -> accion.run());
+        abrir.setStyle("-fx-background-color: transparent; -fx-text-fill: #315A83; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 2 0 0 0;");
+        tarjeta.getChildren().add(abrir);
+        tarjeta.setOnMouseEntered(e -> tarjeta.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-color: #B9CADD; -fx-border-radius: 16; -fx-effect: dropshadow(gaussian, rgba(30,48,75,0.12), 12, 0.15, 0, 4); -fx-cursor: hand; -fx-padding: 20;"));
+        tarjeta.setOnMouseExited(e -> tarjeta.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-color: #E3EAF1; -fx-border-radius: 16; -fx-effect: dropshadow(gaussian, rgba(30,48,75,0.06), 10, 0.10, 0, 2); -fx-padding: 20;"));
+        return tarjeta;
+    }
+
+    private VBox crearPanelBlanco() {
+        VBox panel = new VBox(12);
+        panel.setPadding(new Insets(20));
+        panel.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-color: #E3EAF1; -fx-border-radius: 16; -fx-effect: dropshadow(gaussian, rgba(30,48,75,0.06), 10, 0.10, 0, 2);");
+        return panel;
+    }
+
+    private Label crearEtiqueta(String texto, int tamano, String color, boolean negrita) {
+        Label label = new Label(texto);
+        label.setWrapText(true);
+        label.setStyle("-fx-font-size: " + tamano + "px; -fx-text-fill: " + color + ";"
+                + (negrita ? " -fx-font-weight: bold;" : ""));
+        return label;
+    }
+
+    private Button crearBotonPrincipal(String texto, Runnable accion) {
+        Button boton = new Button(texto);
+        boton.setOnAction(e -> accion.run());
+        boton.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #1E304B; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 9; -fx-padding: 11 18; -fx-cursor: hand;");
+        return boton;
     }
 
     @FXML
@@ -717,54 +935,6 @@ public class PrincipalController {
                     ex
             );
         }
-    }
-
-    private void cambiarContenido(
-            String titulo,
-            String subtitulo,
-            String descripcion
-    ) {
-
-        VBox contenido = new VBox(20);
-
-        contenido.setPadding(
-                new Insets(35, 35, 35, 35)
-        );
-
-        contenido.setStyle(
-                "-fx-background-color: #F4F6F9;"
-        );
-
-        Label lblTitulo = new Label(titulo);
-
-        lblTitulo.setStyle(
-                "-fx-font-size: 28px;"
-                        + "-fx-font-weight: bold;"
-                        + "-fx-text-fill: #243447;"
-        );
-
-        Label lblSubtitulo = new Label(subtitulo);
-
-        lblSubtitulo.setStyle(
-                "-fx-font-size: 17px;"
-                        + "-fx-text-fill: #455A64;"
-        );
-
-        Label lblDescripcion = new Label(descripcion);
-
-        lblDescripcion.setWrapText(true);
-
-        lblDescripcion.setStyle(
-                "-fx-font-size: 14px;"
-        );
-
-        contenido.getChildren().addAll(
-                lblTitulo,
-                lblSubtitulo,
-                lblDescripcion
-        );
-
-        panelPrincipal.setCenter(contenido);
     }
 
     private void mostrarError(
