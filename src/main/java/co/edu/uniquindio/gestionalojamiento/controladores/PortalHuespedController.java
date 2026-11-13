@@ -1,6 +1,8 @@
 package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.DetalleTarifaNoche;
@@ -18,9 +20,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
@@ -28,6 +32,8 @@ import javafx.scene.control.TableView;
 import javafx.util.StringConverter;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.DayOfWeek;
 import java.util.Comparator;
 
 public class PortalHuespedController {
@@ -53,6 +59,17 @@ public class PortalHuespedController {
 
     @FXML
     private ComboBox<Huesped> cmbHuesped;
+
+    @FXML
+    private ComboBox<Apartamento> cmbApartamentoCalendario;
+
+    @FXML
+    private Label lblMesCalendario;
+
+    @FXML
+    private GridPane gridCalendario;
+
+    private YearMonth mesCalendario = YearMonth.now();
 
     @FXML
     private DatePicker dpEntrada;
@@ -162,6 +179,10 @@ public class PortalHuespedController {
                 );
 
         limpiarResumenTarifa();
+
+        if (cmbApartamentoCalendario != null) {
+            cmbApartamentoCalendario.setOnAction(event -> dibujarCalendario());
+        }
     }
 
     /*
@@ -203,6 +224,139 @@ public class PortalHuespedController {
         this.huespedAutenticado = huespedAutenticado;
 
         cargarHuespedes(huespedAutenticado);
+        cargarApartamentosCalendario();
+    }
+
+    private void cargarApartamentosCalendario() {
+
+        if (cmbApartamentoCalendario == null || catalogo == null) {
+            return;
+        }
+
+        cmbApartamentoCalendario.getItems().clear();
+
+        for (Apartamento apartamento : catalogo.listarApartamentos()) {
+            cmbApartamentoCalendario.getItems().add(apartamento);
+        }
+
+        cmbApartamentoCalendario.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Apartamento apartamento) {
+                return apartamento == null ? "" : apartamento.getNombre()
+                        + " (" + apartamento.getCodigo() + ")";
+            }
+
+            @Override
+            public Apartamento fromString(String texto) {
+                return null;
+            }
+        });
+
+        if (!cmbApartamentoCalendario.getItems().isEmpty()) {
+            cmbApartamentoCalendario.getSelectionModel().selectFirst();
+            dibujarCalendario();
+        } else {
+            lblMesCalendario.setText("No hay apartamentos registrados.");
+            gridCalendario.getChildren().clear();
+        }
+    }
+
+    @FXML
+    private void mesAnteriorCalendario() {
+        mesCalendario = mesCalendario.minusMonths(1);
+        dibujarCalendario();
+    }
+
+    @FXML
+    private void mesSiguienteCalendario() {
+        mesCalendario = mesCalendario.plusMonths(1);
+        dibujarCalendario();
+    }
+
+    private void dibujarCalendario() {
+
+        if (gridCalendario == null || lblMesCalendario == null) {
+            return;
+        }
+
+        Apartamento apartamento = cmbApartamentoCalendario.getValue();
+        gridCalendario.getChildren().clear();
+
+        if (apartamento == null || reservaServicio == null) {
+            lblMesCalendario.setText("Selecciona un apartamento.");
+            return;
+        }
+
+        lblMesCalendario.setText(mesCalendario.getMonth()
+                .getDisplayName(java.time.format.TextStyle.FULL,
+                        java.util.Locale.forLanguageTag("es-CO"))
+                + " de " + mesCalendario.getYear());
+
+        String[] dias = {"Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"};
+        for (int columna = 0; columna < dias.length; columna++) {
+            Label encabezado = new Label(dias[columna]);
+            encabezado.setMaxWidth(Double.MAX_VALUE);
+            encabezado.setStyle("-fx-font-weight: bold; -fx-text-fill: #243447;"
+                    + "-fx-alignment: center; -fx-padding: 8;");
+            gridCalendario.add(encabezado, columna, 0);
+        }
+
+        LocalDate primerDia = mesCalendario.atDay(1);
+        int desplazamiento = primerDia.getDayOfWeek().getValue() - 1;
+        int diasMes = mesCalendario.lengthOfMonth();
+
+        for (int dia = 1; dia <= diasMes; dia++) {
+            LocalDate fecha = mesCalendario.atDay(dia);
+            boolean ocupado = estaOcupado(apartamento, fecha);
+
+            Label celda = new Label(String.valueOf(dia));
+            celda.setMaxWidth(Double.MAX_VALUE);
+            celda.setMinHeight(38);
+            celda.setMinWidth(48);
+            celda.setMaxWidth(Double.MAX_VALUE);
+            celda.setStyle(ocupado
+                    ? "-fx-background-color: #F8D7DA; -fx-text-fill: #842029;"
+                    + "-fx-font-weight: bold; -fx-alignment: center;"
+                    + "-fx-background-radius: 6;"
+                    : "-fx-background-color: #D1E7DD; -fx-text-fill: #0F5132;"
+                    + "-fx-alignment: center; -fx-background-radius: 6;");
+
+            int posicion = desplazamiento + dia - 1;
+            gridCalendario.add(celda, posicion % 7, 1 + posicion / 7);
+        }
+
+        if (apartamento.getEstado() == EstadoApartamento.FUERA_DE_SERVICIO) {
+            lblMesCalendario.setText(lblMesCalendario.getText()
+                    + " · Apartamento fuera de servicio");
+        }
+    }
+
+    private boolean estaOcupado(Apartamento apartamento, LocalDate fecha) {
+
+        if (apartamento.getEstado() == EstadoApartamento.FUERA_DE_SERVICIO) {
+            return true;
+        }
+
+        for (Reserva reserva : reservaServicio.listarReservas()) {
+
+            boolean mismoApartamento = reserva.getApartamento().getCodigo()
+                    .equals(apartamento.getCodigo());
+
+            EstadoReserva estado = reserva.getEstado();
+            boolean reservaActiva = estado == EstadoReserva.PENDIENTE
+                    || estado == EstadoReserva.CONFIRMADA
+                    || estado == EstadoReserva.EN_CURSO;
+
+            // La fecha de salida no representa una noche ocupada.
+            boolean fechaDentroDeReserva = !fecha.isBefore(reserva.getFechaEntrada())
+                    && fecha.isBefore(reserva.getFechaSalida());
+
+            if (mismoApartamento && reservaActiva && fechaDentroDeReserva) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void configurarColumnas() {
@@ -585,6 +739,7 @@ public class PortalHuespedController {
             );
 
             cargarReservas();
+            dibujarCalendario();
 
             tablaReservas.getSelectionModel().select(reserva);
             tablaReservas.scrollTo(reserva);

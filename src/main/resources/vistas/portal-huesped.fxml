@@ -11,6 +11,7 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.VBox?>
 
 <ScrollPane
@@ -49,6 +50,46 @@
                           prefWidth="400"
                           maxWidth="Infinity"/>
             </VBox>
+
+            <Separator/>
+
+            <Label text="CALENDARIO DE DISPONIBILIDAD"
+                   style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #243447;"/>
+
+            <Label text="Selecciona un apartamento para consultar sus fechas ocupadas. No se muestran datos de otras reservas."
+                   wrapText="true"
+                   style="-fx-text-fill: #546E7A;"/>
+
+            <ComboBox fx:id="cmbApartamentoCalendario"
+                      promptText="Selecciona un apartamento"
+                      prefWidth="350"/>
+
+            <HBox spacing="12" alignment="CENTER">
+                <Button text="‹ Mes anterior"
+                        onAction="#mesAnteriorCalendario"/>
+
+                <Label fx:id="lblMesCalendario"
+                       text="Mes"
+                       prefWidth="220"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-alignment: center;"/>
+
+                <Button text="Mes siguiente ›"
+                        onAction="#mesSiguienteCalendario"/>
+            </HBox>
+
+            <GridPane fx:id="gridCalendario"
+                      hgap="8"
+                      vgap="8"
+                      maxWidth="560"
+                      style="-fx-padding: 8;"/>
+
+            <HBox spacing="18" alignment="CENTER_LEFT">
+                <Label text="■ Ocupado"
+                       style="-fx-text-fill: #842029; -fx-font-weight: bold;"/>
+
+                <Label text="■ Disponible"
+                       style="-fx-text-fill: #0F5132; -fx-font-weight: bold;"/>
+            </HBox>
 
             <Separator/>
 
@@ -211,22 +252,25 @@
                 <HBox spacing="10">
                     <Label text="Total de la reserva:"
                            style="-fx-font-weight: bold;"/>
+
                     <Label fx:id="lblTotalReserva"
-                           text=" 0"/>
+                           text="0"/>
                 </HBox>
 
                 <HBox spacing="10">
                     <Label text="Anticipo requerido (30 %):"
                            style="-fx-font-weight: bold;"/>
+
                     <Label fx:id="lblAnticipo"
-                           text=" 0"/>
+                           text="0"/>
                 </HBox>
 
                 <HBox spacing="10">
                     <Label text="Saldo pendiente:"
                            style="-fx-font-weight: bold;"/>
+
                     <Label fx:id="lblSaldoPendiente"
-                           text=" 0"/>
+                           text="0"/>
                 </HBox>
 
                 <Label fx:id="lblEstadoPago"

@@ -117,10 +117,19 @@ public class PrincipalController {
 
                 String texto = boton.getText();
 
-                boolean permitido =
-                        administrador
-                                || "Inicio".equals(texto)
-                                || "Portal del huésped".equals(texto);
+                boolean esPortalHuesped =
+                        "Portal del huésped".equals(texto);
+
+                boolean permitido;
+
+                if (administrador) {
+                    // El administrador no necesita entrar al portal del huésped.
+                    permitido = !esPortalHuesped;
+                } else {
+                    // El huésped conserva el acceso a su propio portal.
+                    permitido = "Inicio".equals(texto)
+                            || esPortalHuesped;
+                }
 
                 boton.setVisible(permitido);
                 boton.setManaged(permitido);
