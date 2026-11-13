@@ -855,6 +855,55 @@ public class PortalHuespedController {
     }
 
     @FXML
+    private void solicitarCancelacionSeleccionada() {
+        Reserva reserva = tablaReservas.getSelectionModel().getSelectedItem();
+        Huesped huesped = cmbHuesped.getValue();
+
+        if (reserva == null) {
+            mostrarAlerta(Alert.AlertType.WARNING,
+                    "Selecciona primero la reserva que deseas cancelar.");
+            return;
+        }
+        if (huesped == null) {
+            mostrarAlerta(Alert.AlertType.WARNING,
+                    "No se pudo identificar al huésped de la sesión.");
+            return;
+        }
+
+        boolean perteneceAlHuesped = false;
+        for (Huesped persona : reserva.getHuespedes()) {
+            if (persona.getDocumento().equals(huesped.getDocumento())) {
+                perteneceAlHuesped = true;
+                break;
+            }
+        }
+        if (!perteneceAlHuesped) {
+            mostrarAlerta(Alert.AlertType.ERROR,
+                    "No puedes solicitar la cancelación de una reserva ajena.");
+            return;
+        }
+
+        javafx.scene.control.TextInputDialog dialogo =
+                new javafx.scene.control.TextInputDialog();
+        dialogo.setTitle("Solicitud de cancelación");
+        dialogo.setHeaderText("Reserva " + reserva.getCodigo());
+        dialogo.setContentText("Indica el motivo de la cancelación:");
+
+        dialogo.showAndWait().ifPresent(motivo -> {
+            try {
+                reservaServicio.solicitarCancelacion(reserva.getCodigo(), motivo);
+                mostrarAlerta(Alert.AlertType.INFORMATION,
+                        "Tu solicitud fue enviada correctamente y quedó PENDIENTE.\n\n"
+                                + "La reserva seguirá ocupando las fechas hasta que "
+                                + "el administrador apruebe la cancelación.");
+                cargarReservas();
+            } catch (RuntimeException ex) {
+                mostrarAlerta(Alert.AlertType.ERROR, ex.getMessage());
+            }
+        });
+    }
+
+    @FXML
     private void agregarFavorito() {
 
         Huesped huesped = cmbHuesped.getValue();

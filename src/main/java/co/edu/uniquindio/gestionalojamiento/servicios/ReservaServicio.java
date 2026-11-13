@@ -3,6 +3,7 @@ package co.edu.uniquindio.gestionalojamiento.servicios;
 import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoSolicitudCancelacion;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ArbolBinarioBusqueda;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ComparadorApartamentoPreparacion;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ListaDoble;
@@ -12,11 +13,14 @@ import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionHuespedApartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.RegistroFolio;
+import co.edu.uniquindio.gestionalojamiento.modelo.SolicitudCancelacion;
 import java.time.LocalDateTime;
 import co.edu.uniquindio.gestionalojamiento.estructuras.ColaPrioridad;
 import java.util.Comparator;
 import co.edu.uniquindio.gestionalojamiento.modelo.MovimientoFolio;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
 import java.time.LocalDate;
 
 public class ReservaServicio {
@@ -28,6 +32,7 @@ public class ReservaServicio {
     private final ListaDoble<IndiceReservasApartamento> indicesPorApartamento;
     private final ListaDoble<RegistroFolio> foliosPorReserva;
     private final ColaPrioridad<Reserva> colaVencimientos;
+    private final List<SolicitudCancelacion> solicitudesCancelacion;
 
     public ReservaServicio() {
         reservas = new ArbolBinarioBusqueda<>();
@@ -39,6 +44,7 @@ public class ReservaServicio {
 
         colaVencimientos = new ColaPrioridad<>(10,
                 Comparator.comparing(Reserva::getFechaVencimiento).thenComparing(Reserva::getCodigo));
+        solicitudesCancelacion = new ArrayList<>();
 
     }
 
@@ -492,6 +498,66 @@ public class ReservaServicio {
         reserva.cambiarEstado(EstadoReserva.CONFIRMADA);
     }
 
+
+    // -----------------------------------------------------------------
+    // SOLICITUDES DE CANCELACIÓN DEL HUÉSPED
+    // -----------------------------------------------------------------
+
+    public SolicitudCancelacion solicitarCancelacion(String codigoReserva, String motivo) {
+        Reserva reserva = buscarReservaObligatoria(codigoReserva);
+
+        if (reserva.getEstado() == EstadoReserva.CANCELADA
+                || reserva.getEstado() == EstadoReserva.FINALIZADA
+                || reserva.getEstado() == EstadoReserva.NO_SHOW
+                || reserva.getEstado() == EstadoReserva.EN_CURSO) {
+            throw new IllegalStateException(
+                    "La reserva no admite solicitudes de cancelación en su estado actual.");
+        }
+
+        for (SolicitudCancelacion solicitud : solicitudesCancelacion) {
+            if (solicitud.getReserva().getCodigo().equals(codigoReserva)
+                    && solicitud.getEstado() == EstadoSolicitudCancelacion.PENDIENTE) {
+                throw new IllegalStateException(
+                        "Esta reserva ya tiene una solicitud de cancelación pendiente.");
+            }
+        }
+
+        SolicitudCancelacion solicitud = new SolicitudCancelacion(
+                "CAN-" + System.currentTimeMillis(), reserva, motivo);
+        solicitudesCancelacion.add(solicitud);
+        return solicitud;
+    }
+
+    public List<SolicitudCancelacion> listarSolicitudesCancelacion() {
+        return new ArrayList<>(solicitudesCancelacion);
+    }
+
+    public void aprobarSolicitudCancelacion(String codigoSolicitud, String respuesta) {
+        SolicitudCancelacion solicitud = buscarSolicitudCancelacion(codigoSolicitud);
+        if (solicitud.getEstado() != EstadoSolicitudCancelacion.PENDIENTE) {
+            throw new IllegalStateException("La solicitud ya fue atendida.");
+        }
+        // La cancelación libera las fechas del apartamento en el índice de reservas.
+        cancelarReserva(solicitud.getReserva().getCodigo());
+        solicitud.responder(EstadoSolicitudCancelacion.APROBADA, respuesta);
+    }
+
+    public void rechazarSolicitudCancelacion(String codigoSolicitud, String respuesta) {
+        SolicitudCancelacion solicitud = buscarSolicitudCancelacion(codigoSolicitud);
+        solicitud.responder(EstadoSolicitudCancelacion.RECHAZADA, respuesta);
+    }
+
+    private SolicitudCancelacion buscarSolicitudCancelacion(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new IllegalArgumentException("Selecciona una solicitud válida.");
+        }
+        for (SolicitudCancelacion solicitud : solicitudesCancelacion) {
+            if (solicitud.getCodigo().equals(codigo)) {
+                return solicitud;
+            }
+        }
+        throw new IllegalArgumentException("No se encontró la solicitud seleccionada.");
+    }
 
     public void cancelarReserva(String codigo) {
 

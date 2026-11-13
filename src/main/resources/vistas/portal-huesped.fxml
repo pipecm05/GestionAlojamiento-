@@ -201,6 +201,13 @@
                 </columns>
             </TableView>
 
+            <Button text="Solicitar cancelación de la reserva seleccionada"
+                    onAction="#solicitarCancelacionSeleccionada"
+                    maxWidth="360"
+                    style="-fx-background-color: #FFF3E0;
+                           -fx-text-fill: #B45309;
+                           -fx-font-weight: bold;"/>
+
             <Separator/>
 
             <Label text="DESGLOSE DE TARIFAS"

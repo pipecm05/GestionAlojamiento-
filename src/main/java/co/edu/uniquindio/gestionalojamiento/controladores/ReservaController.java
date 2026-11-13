@@ -5,6 +5,8 @@ import co.edu.uniquindio.gestionalojamiento.enums.CanalReserva;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Huesped;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
+import co.edu.uniquindio.gestionalojamiento.modelo.SolicitudCancelacion;
+import co.edu.uniquindio.gestionalojamiento.enums.EstadoSolicitudCancelacion;
 import co.edu.uniquindio.gestionalojamiento.modelo.AsignacionGrupo;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
@@ -23,6 +25,8 @@ import java.time.LocalDateTime;
 import co.edu.uniquindio.gestionalojamiento.modelo.MovimientoFolio;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.List;
+import java.time.format.DateTimeFormatterBuilder;
 
 public class ReservaController {
 
@@ -64,6 +68,14 @@ public class ReservaController {
     @FXML private TableColumn<Reserva, String> colSalida;
     @FXML private TableColumn<Reserva, String> colCanal;
     @FXML private TableColumn<Reserva, String> colEstado;
+
+    @FXML private TableView<SolicitudCancelacion> tablaSolicitudesCancelacion;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudCodigo;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudReserva;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudHuesped;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudMotivo;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudEstado;
+    @FXML private TableColumn<SolicitudCancelacion, String> colSolicitudFecha;
 
     @FXML
     private void initialize() {
@@ -127,6 +139,28 @@ public class ReservaController {
         tablaReservas.setPlaceholder(
                 new Label("No hay reservas para mostrar.")
         );
+
+        colSolicitudCodigo.setCellValueFactory(d ->
+                new ReadOnlyStringWrapper(d.getValue().getCodigo()));
+        colSolicitudReserva.setCellValueFactory(d ->
+                new ReadOnlyStringWrapper(d.getValue().getReserva().getCodigo()));
+        colSolicitudHuesped.setCellValueFactory(d -> {
+            StringBuilder nombres = new StringBuilder();
+            for (Huesped huesped : d.getValue().getReserva().getHuespedes()) {
+                if (nombres.length() > 0) nombres.append(", ");
+                nombres.append(huesped.getNombreCompleto());
+            }
+            return new ReadOnlyStringWrapper(nombres.toString());
+        });
+        colSolicitudMotivo.setCellValueFactory(d ->
+                new ReadOnlyStringWrapper(d.getValue().getMotivo()));
+        colSolicitudEstado.setCellValueFactory(d ->
+                new ReadOnlyStringWrapper(d.getValue().getEstado().name()));
+        colSolicitudFecha.setCellValueFactory(d ->
+                new ReadOnlyStringWrapper(d.getValue().getFechaSolicitud()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))));
+        tablaSolicitudesCancelacion.setPlaceholder(
+                new Label("No hay solicitudes de cancelación."));
     }
 
     public void configurar(
@@ -373,55 +407,66 @@ public class ReservaController {
                 "Total de reservas: "
                         + tablaReservas.getItems().size()
         );
+        actualizarSolicitudesCancelacion();
     }
 
     @FXML
-    private void cancelarSeleccionada() {
+    private void actualizarSolicitudesCancelacion() {
+        if (reservaServicio == null || tablaSolicitudesCancelacion == null) return;
+        tablaSolicitudesCancelacion.getItems().setAll(
+                reservaServicio.listarSolicitudesCancelacion());
+    }
 
-        if (reservaServicio == null) {
+    @FXML
+    private void aprobarSolicitudCancelacion() {
+        SolicitudCancelacion solicitud = tablaSolicitudesCancelacion
+                .getSelectionModel().getSelectedItem();
+        if (solicitud == null) {
+            error("Selecciona una solicitud de cancelación.");
             return;
         }
-
-        Reserva seleccionada =
-                tablaReservas.getSelectionModel().getSelectedItem();
-
-        if (seleccionada == null) {
-            error("Selecciona una reserva en la tabla.");
-            return;
-        }
-
-        Alert confirmacion = new Alert(
-                Alert.AlertType.CONFIRMATION,
-                "¿Cancelar la reserva "
-                        + seleccionada.getCodigo() + "?",
-                ButtonType.YES,
-                ButtonType.NO
-        );
-
-        confirmacion.setTitle("Confirmar cancelación");
+        Alert confirmacion = new Alert(Alert.AlertType.CONFIRMATION,
+                "¿Aprobar la cancelación de la reserva "
+                        + solicitud.getReserva().getCodigo() + "?\n"
+                        + "Al aprobar se liberarán las fechas.",
+                ButtonType.YES, ButtonType.NO);
+        confirmacion.setTitle("Aprobar cancelación");
         confirmacion.setHeaderText(null);
-
-        if (confirmacion.showAndWait()
-                .orElse(ButtonType.NO) != ButtonType.YES) {
-            return;
-        }
-
+        if (confirmacion.showAndWait().orElse(ButtonType.NO) != ButtonType.YES) return;
         try {
-            reservaServicio.cancelarReserva(
-                    seleccionada.getCodigo()
-            );
-
+            reservaServicio.aprobarSolicitudCancelacion(
+                    solicitud.getCodigo(), "Solicitud aprobada por el administrador.");
             mostrarTodas();
-
-            lblEstado.setText(
-                    "Reserva cancelada: "
-                            + seleccionada.getCodigo()
-            );
-
-        } catch (IllegalArgumentException
-                 | IllegalStateException ex) {
+            informar("Cancelación aprobada",
+                    "La reserva quedó CANCELADA y sus fechas fueron liberadas.");
+        } catch (RuntimeException ex) {
             error(ex.getMessage());
         }
+    }
+
+    @FXML
+    private void rechazarSolicitudCancelacion() {
+        SolicitudCancelacion solicitud = tablaSolicitudesCancelacion
+                .getSelectionModel().getSelectedItem();
+        if (solicitud == null) {
+            error("Selecciona una solicitud de cancelación.");
+            return;
+        }
+        TextInputDialog dialogo = new TextInputDialog("La reserva se mantiene activa.");
+        dialogo.setTitle("Rechazar cancelación");
+        dialogo.setHeaderText("Solicitud " + solicitud.getCodigo());
+        dialogo.setContentText("Motivo del rechazo:");
+        dialogo.showAndWait().ifPresent(respuesta -> {
+            try {
+                reservaServicio.rechazarSolicitudCancelacion(
+                        solicitud.getCodigo(), respuesta);
+                actualizarSolicitudesCancelacion();
+                informar("Solicitud rechazada",
+                        "La solicitud fue RECHAZADA. La reserva conserva su estado y fechas.");
+            } catch (RuntimeException ex) {
+                error(ex.getMessage());
+            }
+        });
     }
 
     // -----------------------------------------------------------------

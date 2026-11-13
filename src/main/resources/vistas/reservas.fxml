@@ -268,8 +268,6 @@
                 <Button text="Mostrar todas"
                         onAction="#mostrarTodas"/>
 
-                <Button text="Cancelar seleccionada"
-                        onAction="#cancelarSeleccionada"/>
             </HBox>
 
             <TableView fx:id="tablaReservas"
@@ -346,6 +344,32 @@
                 <Button text="Consultar folio"
                         onAction="#consultarFolioSeleccionada"/>
 
+            </FlowPane>
+
+            <Separator/>
+
+            <Label text="Solicitudes de cancelación de huéspedes"
+                   style="-fx-font-size: 19px; -fx-font-weight: bold;"/>
+            <Label text="Revisa el motivo y decide si apruebas o rechazas cada solicitud. Las fechas solo se liberan cuando apruebas."
+                   wrapText="true" style="-fx-text-fill: #546E7A;"/>
+
+            <TableView fx:id="tablaSolicitudesCancelacion" prefHeight="220">
+                <columns>
+                    <TableColumn fx:id="colSolicitudCodigo" text="Solicitud" prefWidth="120"/>
+                    <TableColumn fx:id="colSolicitudReserva" text="Reserva" prefWidth="110"/>
+                    <TableColumn fx:id="colSolicitudHuesped" text="Huésped" prefWidth="180"/>
+                    <TableColumn fx:id="colSolicitudMotivo" text="Motivo" prefWidth="250"/>
+                    <TableColumn fx:id="colSolicitudEstado" text="Estado" prefWidth="110"/>
+                    <TableColumn fx:id="colSolicitudFecha" text="Fecha" prefWidth="150"/>
+                </columns>
+            </TableView>
+
+            <FlowPane hgap="10" vgap="10">
+                <Button text="Actualizar solicitudes" onAction="#actualizarSolicitudesCancelacion"/>
+                <Button text="Aprobar cancelación" onAction="#aprobarSolicitudCancelacion"
+                        style="-fx-background-color: #28784B; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                <Button text="Rechazar cancelación" onAction="#rechazarSolicitudCancelacion"
+                        style="-fx-background-color: #B42318; -fx-text-fill: white; -fx-font-weight: bold;"/>
             </FlowPane>
 
             <Label fx:id="lblEstado"
