@@ -15,6 +15,7 @@ import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.RutaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TarifaServicio;
 import co.edu.uniquindio.gestionalojamiento.servicios.TurnoServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.TareaOperativaServicio;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -53,6 +54,9 @@ public class PrincipalController {
 
     private final ReservaServicio reservaServicio =
             ContextoAplicacion.getInstancia().getReservaServicio();
+
+    private final co.edu.uniquindio.gestionalojamiento.servicios.TareaOperativaServicio tareaOperativaServicio =
+            ContextoAplicacion.getInstancia().getTareaOperativaServicio();
 
     private final CanalExternoServicio canalExternoServicio =
             ContextoAplicacion.getInstancia().getCanalExternoServicio();
@@ -489,7 +493,7 @@ public class PrincipalController {
             AlojamientoController controlador =
                     loader.getController();
 
-            controlador.configurar(catalogo, reservaServicio);
+            controlador.configurar(catalogo, reservaServicio, tareaOperativaServicio);
 
             panelPrincipal.setCenter(vista);
 
@@ -561,6 +565,56 @@ public class PrincipalController {
                     "No fue posible abrir la gestión de empleados.",
                     ex
             );
+        }
+    }
+
+
+    @FXML
+    private void mostrarTareasOperativas() {
+
+        System.out.println("Intentando abrir la pantalla de tareas operativas...");
+
+        if (!requiereAdministrador()) {
+            System.out.println("Acceso denegado: el usuario no es administrador.");
+            return;
+        }
+
+        try {
+            var ubicacionFXML = getClass().getResource("/vistas/tareas-operativas.fxml");
+
+            if (ubicacionFXML == null) {
+                throw new IllegalStateException(
+                        "No se encontró /vistas/tareas-operativas.fxml. "
+                                + "Verifica que esté en src/main/resources/vistas."
+                );
+            }
+
+            if (tareaOperativaServicio == null) {
+                throw new IllegalStateException(
+                        "El servicio de tareas operativas no está inicializado en ContextoAplicacion."
+                );
+            }
+
+            FXMLLoader loader = new FXMLLoader(ubicacionFXML);
+            Parent vista = loader.load();
+
+            TareasOperativasController controlador = loader.getController();
+            if (controlador == null) {
+                throw new IllegalStateException(
+                        "JavaFX no pudo crear TareasOperativasController. Revisa fx:controller en el FXML."
+                );
+            }
+
+            controlador.configurar(tareaOperativaServicio);
+            panelPrincipal.setCenter(vista);
+            panelPrincipal.requestLayout();
+
+            System.out.println("Pantalla de tareas operativas abierta correctamente.");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            mostrarError("No fue posible abrir la gestión de tareas operativas: "
+                    + ex.getMessage(), ex);
         }
     }
 

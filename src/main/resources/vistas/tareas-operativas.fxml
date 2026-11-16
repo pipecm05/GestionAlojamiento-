@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.TareasOperativasController"
+      spacing="14"
+      style="-fx-background-color: #F3F6FA;">
+
+    <padding>
+        <Insets top="24" right="25" bottom="24" left="25"/>
+    </padding>
+
+    <VBox spacing="4">
+        <Label text="Gestión de tareas operativas"
+               style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #1E304B;"/>
+
+        <Label text="Asigna y supervisa las actividades de limpieza y mantenimiento."
+               style="-fx-text-fill: #64748B; -fx-font-size: 13px;"/>
+    </VBox>
+
+    <GridPane hgap="12" vgap="10">
+
+        <columnConstraints>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+            <ColumnConstraints percentWidth="25"/>
+        </columnConstraints>
+
+        <VBox spacing="5"
+              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 14;"
+              GridPane.columnIndex="0">
+            <Label text="Tareas pendientes"/>
+            <Label fx:id="lblPendientes" text="0"
+                   style="-fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #B7791F;"/>
+        </VBox>
+
+        <VBox spacing="5"
+              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 14;"
+              GridPane.columnIndex="1">
+            <Label text="En proceso"/>
+            <Label fx:id="lblProceso" text="0"
+                   style="-fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #2563EB;"/>
+        </VBox>
+
+        <VBox spacing="5"
+              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 14;"
+              GridPane.columnIndex="2">
+            <Label text="Finalizadas"/>
+            <Label fx:id="lblFinalizadas" text="0"
+                   style="-fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #16804A;"/>
+        </VBox>
+
+        <VBox spacing="5"
+              style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 14;"
+              GridPane.columnIndex="3">
+            <Label text="Empleados disponibles"/>
+            <Label fx:id="lblDisponibles" text="0"
+                   style="-fx-font-size: 25px; -fx-font-weight: bold; -fx-text-fill: #1E304B;"/>
+        </VBox>
+
+    </GridPane>
+
+    <HBox spacing="10" alignment="CENTER_LEFT">
+
+        <ComboBox fx:id="cmbFiltroTipo" prefWidth="190"/>
+        <ComboBox fx:id="cmbFiltroEstado" prefWidth="190"/>
+
+        <Button text="Filtrar" onAction="#filtrar"
+                style="-fx-background-color: #1E304B; -fx-text-fill: white;"/>
+
+        <Button text="Quitar filtros" onAction="#limpiarFiltros"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <Button text="Actualizar" onAction="#mostrarTodas"/>
+
+    </HBox>
+
+    <TableView fx:id="tablaTareas"
+               prefHeight="300"
+               VBox.vgrow="ALWAYS">
+
+        <columns>
+
+            <TableColumn fx:id="colCodigo" text="Código" prefWidth="85"/>
+            <TableColumn fx:id="colTipo" text="Tipo" prefWidth="115"/>
+            <TableColumn fx:id="colApartamento" text="Apartamento" prefWidth="105"/>
+            <TableColumn fx:id="colMotivo" text="Motivo" prefWidth="210"/>
+            <TableColumn fx:id="colEmpleado" text="Empleado" prefWidth="170"/>
+            <TableColumn fx:id="colEstado" text="Estado" prefWidth="115"/>
+            <TableColumn fx:id="colFecha" text="Creación" prefWidth="135"/>
+
+        </columns>
+
+    </TableView>
+
+    <TitledPane text="Administrar tarea seleccionada"
+                expanded="true"
+                collapsible="false">
+
+        <content>
+
+            <VBox spacing="10">
+
+                <padding>
+                    <Insets top="12" right="12" bottom="12" left="12"/>
+                </padding>
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+
+                    <Label text="Empleado disponible:"/>
+
+                    <ComboBox fx:id="cmbEmpleado"
+                              promptText="Selecciona empleado"
+                              prefWidth="300"/>
+
+                    <Button text="Asignar empleado"
+                            onAction="#asignarEmpleado"
+                            style="-fx-background-color: #1E304B; -fx-text-fill: white;"/>
+
+                </HBox>
+
+                <Label text="Observaciones:"/>
+
+                <TextArea fx:id="txtObservaciones"
+                          promptText="Escribe observaciones al finalizar o cancelar la tarea..."
+                          prefRowCount="2"
+                          wrapText="true"/>
+
+                <HBox spacing="9">
+
+                    <Button text="Iniciar tarea"
+                            onAction="#iniciarTarea"/>
+
+                    <Button text="Finalizar tarea"
+                            onAction="#finalizarTarea"
+                            style="-fx-background-color: #16804A; -fx-text-fill: white;"/>
+
+                    <Button text="Cancelar tarea"
+                            onAction="#cancelarTarea"
+                            style="-fx-background-color: #B42318; -fx-text-fill: white;"/>
+
+                </HBox>
+
+            </VBox>
+
+        </content>
+
+    </TitledPane>
+
+    <Label fx:id="lblMensaje"
+           text="Selecciona una tarea para administrarla."
+           wrapText="true"/>
+
+</VBox>

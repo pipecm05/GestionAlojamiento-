@@ -2,10 +2,12 @@ package co.edu.uniquindio.gestionalojamiento.controladores;
 
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoApartamento;
 import co.edu.uniquindio.gestionalojamiento.enums.EstadoReserva;
+import co.edu.uniquindio.gestionalojamiento.enums.TipoTareaOperativa;
 import co.edu.uniquindio.gestionalojamiento.modelo.Apartamento;
 import co.edu.uniquindio.gestionalojamiento.modelo.Reserva;
 import co.edu.uniquindio.gestionalojamiento.servicios.CatalogoAlojamiento;
 import co.edu.uniquindio.gestionalojamiento.servicios.ReservaServicio;
+import co.edu.uniquindio.gestionalojamiento.servicios.TareaOperativaServicio;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.fxml.FXML;
@@ -19,6 +21,7 @@ public class AlojamientoController {
 
     private CatalogoAlojamiento catalogo;
     private ReservaServicio reservaServicio;
+    private TareaOperativaServicio tareaOperativaServicio;
 
     @FXML
     private TextField txtCodigo;
@@ -123,16 +126,19 @@ public class AlojamientoController {
 
     public void configurar(
             CatalogoAlojamiento catalogo,
-            ReservaServicio reservaServicio
+            ReservaServicio reservaServicio,
+            TareaOperativaServicio tareaOperativaServicio
     ) {
-        if (catalogo == null || reservaServicio == null) {
+        if (catalogo == null || reservaServicio == null
+                || tareaOperativaServicio == null) {
             throw new IllegalArgumentException(
-                    "El catálogo y el servicio de reservas son obligatorios."
+                    "El catálogo y los servicios de reservas y tareas son obligatorios."
             );
         }
 
         this.catalogo = catalogo;
         this.reservaServicio = reservaServicio;
+        this.tareaOperativaServicio = tareaOperativaServicio;
         mostrarTodos();
     }
 
@@ -336,6 +342,24 @@ public class AlojamientoController {
                 motivo
         );
 
+        try {
+            tareaOperativaServicio.crearTarea(
+                    TipoTareaOperativa.MANTENIMIENTO,
+                    seleccionado,
+                    motivo
+            );
+        } catch (RuntimeException ex) {
+            // Si no se puede crear la tarea, se revierte el estado para
+            // evitar dejar el apartamento fuera de servicio sin registro.
+            seleccionado.cambiarEstado(EstadoApartamento.PREPARADO, null);
+            mostrarError(
+                    "No se pudo crear la tarea de mantenimiento: "
+                            + ex.getMessage()
+            );
+            mostrarTodos();
+            return;
+        }
+
         txtMotivoFueraServicio.clear();
         mostrarTodos();
         tablaApartamentos.getSelectionModel().select(seleccionado);
@@ -395,10 +419,11 @@ public class AlojamientoController {
     }
 
     private boolean serviciosConfigurados() {
-        if (catalogo == null || reservaServicio == null) {
+        if (catalogo == null || reservaServicio == null
+                || tareaOperativaServicio == null) {
             mostrarError(
-                    "La gestión de alojamientos no tiene configurado "
-                            + "el servicio de reservas."
+                    "La gestión de alojamientos no tiene configurados "
+                            + "todos los servicios necesarios."
             );
             return false;
         }

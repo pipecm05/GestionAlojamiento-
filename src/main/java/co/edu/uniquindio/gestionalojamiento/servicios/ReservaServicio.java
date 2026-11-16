@@ -25,6 +25,7 @@ import java.time.LocalDate;
 
 public class ReservaServicio {
 
+    private final TareaOperativaServicio tareaOperativaServicio;
     private final ArbolBinarioBusqueda<Reserva> reservas;
     private final DisponibilidadServicio disponibilidadServicio;
     private final PreparacionServicio preparacionServicio;
@@ -34,7 +35,19 @@ public class ReservaServicio {
     private final ColaPrioridad<Reserva> colaVencimientos;
     private final List<SolicitudCancelacion> solicitudesCancelacion;
 
+    /**
+     * Constructor de compatibilidad para pruebas o instancias independientes.
+     */
     public ReservaServicio() {
+        this(null);
+    }
+
+    /**
+     * Constructor utilizado por el contexto principal de la aplicación.
+     * Recibe el servicio compartido de tareas operativas.
+     */
+    public ReservaServicio(TareaOperativaServicio tareaOperativaServicio) {
+        this.tareaOperativaServicio = tareaOperativaServicio;
         reservas = new ArbolBinarioBusqueda<>();
         disponibilidadServicio = new DisponibilidadServicio();
         indicesPorApartamento = new ListaDoble<>();
@@ -45,7 +58,6 @@ public class ReservaServicio {
         colaVencimientos = new ColaPrioridad<>(10,
                 Comparator.comparing(Reserva::getFechaVencimiento).thenComparing(Reserva::getCodigo));
         solicitudesCancelacion = new ArrayList<>();
-
     }
 
 
@@ -620,6 +632,18 @@ public class ReservaServicio {
         apartamento.cambiarEstado(
                 EstadoApartamento.PENDIENTE_PREPARACION,
                 "Pendiente de limpieza después del check-out.");
+
+        // Crear la tarea operativa de limpieza cuando se utiliza el contexto
+        // compartido de la aplicación. El constructor sin argumentos se
+        // conserva para pruebas o usos independientes del servicio.
+        if (tareaOperativaServicio != null) {
+            tareaOperativaServicio.crearTarea(
+                    co.edu.uniquindio.gestionalojamiento.enums.TipoTareaOperativa.LIMPIEZA,
+                    apartamento,
+                    "Limpieza requerida después del check-out de la reserva "
+                            + reserva.getCodigo() + "."
+            );
+        }
 
         preparacionServicio.agregarApartamento(apartamento);
     }
