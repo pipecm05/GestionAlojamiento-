@@ -15,6 +15,7 @@ public class TareaOperativaServicio {
     private final EmpleadoServicio empleadoServicio;
     private final ListaDoble<TareaOperativa> tareas;
     private int consecutivo;
+    private PreparacionServicio preparacionServicio;
 
     public TareaOperativaServicio(EmpleadoServicio empleadoServicio) {
         if (empleadoServicio == null) {
@@ -25,6 +26,14 @@ public class TareaOperativaServicio {
         this.empleadoServicio = empleadoServicio;
         this.tareas = new ListaDoble<>();
         this.consecutivo = 1;
+        this.preparacionServicio = null;
+    }
+
+    public void configurarPreparacionServicio(PreparacionServicio preparacionServicio) {
+        if (preparacionServicio == null) {
+            throw new IllegalArgumentException("El servicio de preparación es obligatorio.");
+        }
+        this.preparacionServicio = preparacionServicio;
     }
 
     public TareaOperativa crearTarea(
@@ -119,7 +128,29 @@ public class TareaOperativaServicio {
     }
 
     public void finalizarTarea(String codigoTarea, String observaciones) {
-        buscarTareaObligatoria(codigoTarea).finalizar(observaciones);
+        TareaOperativa tarea = buscarTareaObligatoria(codigoTarea);
+
+        if (tarea.getEstado() != EstadoTareaOperativa.ASIGNADA
+                && tarea.getEstado() != EstadoTareaOperativa.EN_PROCESO) {
+            throw new IllegalStateException(
+                    "Solo se puede finalizar una tarea asignada o en proceso.");
+        }
+
+        if (tarea.getTipo() == TipoTareaOperativa.LIMPIEZA) {
+            if (preparacionServicio == null) {
+                throw new IllegalStateException(
+                        "El servicio de preparación no está conectado.");
+            }
+            EstadoApartamento estado = tarea.getApartamento().getEstado();
+            if (estado != EstadoApartamento.PENDIENTE_PREPARACION
+                    && estado != EstadoApartamento.EN_PREPARACION) {
+                throw new IllegalStateException(
+                        "El apartamento no está en un estado válido para finalizar la limpieza.");
+            }
+            preparacionServicio.finalizarPreparacionPorTarea(tarea.getApartamento());
+        }
+
+        tarea.finalizar(observaciones);
     }
 
     public void cancelarTarea(String codigoTarea, String observaciones) {
@@ -190,6 +221,23 @@ public class TareaOperativaServicio {
                     && !tieneTareaActiva(empleado.getDocumento())) {
                 resultado.agregar(empleado);
             }
+        }
+        return resultado;
+    }
+
+    public ListaDoble<Empleado> listarEmpleadosParaReasignacion(String codigoTarea) {
+        TareaOperativa tarea = buscarTareaObligatoria(codigoTarea);
+        ListaDoble<Empleado> resultado = listarEmpleadosDisponibles(tarea.getTipo());
+        Empleado actual = tarea.getEmpleado();
+        if (actual != null && actual.isActivo()) {
+            boolean incluido = false;
+            for (Empleado empleado : resultado) {
+                if (empleado.getDocumento().equals(actual.getDocumento())) {
+                    incluido = true;
+                    break;
+                }
+            }
+            if (!incluido) resultado.agregar(actual);
         }
         return resultado;
     }

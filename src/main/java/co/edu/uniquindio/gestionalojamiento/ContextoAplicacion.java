@@ -35,6 +35,8 @@ public final class ContextoAplicacion {
         // ReservaServicio recibe el servicio compartido para crear tareas
         // de limpieza automáticamente después del check-out.
         reservaServicio = new ReservaServicio(tareaOperativaServicio);
+        tareaOperativaServicio.configurarPreparacionServicio(
+                reservaServicio.getPreparacionServicio());
 
         canalExternoServicio = new CanalExternoServicio(reservaServicio);
         tarifaServicio = new TarifaServicio();

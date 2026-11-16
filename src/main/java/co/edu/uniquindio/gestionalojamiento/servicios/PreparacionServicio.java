@@ -220,6 +220,44 @@ public class PreparacionServicio {
         finalizarPreparacion();
     }
 
+    /**
+     * Finaliza la preparación cuando el trabajo se completa desde el módulo
+     * de tareas operativas. Retira el apartamento de la cola y libera el
+     * turno de preparación si era el apartamento que estaba en proceso.
+     */
+    public void finalizarPreparacionPorTarea(Apartamento apartamento) {
+        if (apartamento == null) {
+            throw new IllegalArgumentException("El apartamento es obligatorio.");
+        }
+
+        if (apartamento.getEstado() != EstadoApartamento.PENDIENTE_PREPARACION
+                && apartamento.getEstado() != EstadoApartamento.EN_PREPARACION) {
+            throw new IllegalStateException(
+                    "El apartamento no está pendiente ni en preparación.");
+        }
+
+        ColaPrioridad<Apartamento> nuevaCola =
+                new ColaPrioridad<>(10, comparador);
+
+        for (Apartamento pendiente : colaPreparacion) {
+            if (!pendiente.getCodigo().equals(apartamento.getCodigo())
+                    && pendiente.getEstado() == EstadoApartamento.PENDIENTE_PREPARACION) {
+                nuevaCola.insertar(pendiente);
+            }
+        }
+
+        colaPreparacion = nuevaCola;
+
+        if (apartamentoEnPreparacion != null
+                && apartamentoEnPreparacion.getCodigo().equals(apartamento.getCodigo())) {
+            apartamentoEnPreparacion = null;
+        }
+
+        apartamento.cambiarEstado(
+                EstadoApartamento.PREPARADO,
+                "Limpieza finalizada desde tareas operativas.");
+    }
+
     public Apartamento getApartamentoEnPreparacion() {
         return apartamentoEnPreparacion;
     }

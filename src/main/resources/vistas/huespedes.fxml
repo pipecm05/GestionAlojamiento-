@@ -4,153 +4,185 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.HuespedController"
-      spacing="15"
-      style="-fx-background-color: #F4F6F9;">
+<ScrollPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="co.edu.uniquindio.gestionalojamiento.controladores.HuespedController"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            vbarPolicy="AS_NEEDED"
+            pannable="true"
+            style="-fx-background: #F4F6F9;">
 
-    <padding>
-        <Insets top="25" right="25" bottom="25" left="25"/>
-    </padding>
+    <content>
 
-    <Label text="Gestión de huéspedes"
-           style="-fx-font-size: 26px;
-                  -fx-font-weight: bold;
-                  -fx-text-fill: #243447;"/>
+        <VBox spacing="15"
+              fillWidth="true"
+              style="-fx-background-color: #F4F6F9;">
 
-    <Label text="Registro y consulta de huéspedes del alojamiento."
-           style="-fx-font-size: 14px;"/>
+            <padding>
+                <Insets top="25" right="25" bottom="25" left="25"/>
+            </padding>
 
-    <TitledPane text="Registrar huésped"
-                expanded="true"
-                collapsible="false">
+            <!-- TÍTULO -->
 
-        <content>
-            <GridPane hgap="12" vgap="12">
+            <Label text="Gestión de huéspedes"
+                   style="-fx-font-size: 26px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #243447;"/>
 
-                <padding>
-                    <Insets top="15" right="15"
-                            bottom="15" left="15"/>
-                </padding>
+            <Label text="Registro y consulta de huéspedes del alojamiento."
+                   style="-fx-font-size: 14px;"/>
 
-                <Label text="Documento:"
-                       GridPane.rowIndex="0"
-                       GridPane.columnIndex="0"/>
+            <!-- REGISTRO -->
 
-                <TextField fx:id="txtDocumento"
-                           promptText="Número de documento"
-                           GridPane.rowIndex="0"
-                           GridPane.columnIndex="1"/>
+            <TitledPane text="Registrar huésped"
+                        expanded="true"
+                        collapsible="false">
 
-                <Label text="Nombres:"
-                       GridPane.rowIndex="1"
-                       GridPane.columnIndex="0"/>
+                <content>
+                    <GridPane hgap="12" vgap="12">
 
-                <TextField fx:id="txtNombres"
-                           promptText="Nombres"
-                           GridPane.rowIndex="1"
-                           GridPane.columnIndex="1"/>
+                        <padding>
+                            <Insets top="15" right="15" bottom="15" left="15"/>
+                        </padding>
 
-                <Label text="Apellidos:"
-                       GridPane.rowIndex="2"
-                       GridPane.columnIndex="0"/>
+                        <Label text="Documento:"
+                               GridPane.rowIndex="0"
+                               GridPane.columnIndex="0"/>
 
-                <TextField fx:id="txtApellidos"
-                           promptText="Apellidos"
-                           GridPane.rowIndex="2"
-                           GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtDocumento"
+                                   promptText="Número de documento"
+                                   GridPane.rowIndex="0"
+                                   GridPane.columnIndex="1"/>
 
-                <Label text="Teléfono:"
-                       GridPane.rowIndex="3"
-                       GridPane.columnIndex="0"/>
+                        <Label text="Nombres:"
+                               GridPane.rowIndex="1"
+                               GridPane.columnIndex="0"/>
 
-                <TextField fx:id="txtTelefono"
-                           promptText="Teléfono"
-                           GridPane.rowIndex="3"
-                           GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtNombres"
+                                   promptText="Nombres"
+                                   GridPane.rowIndex="1"
+                                   GridPane.columnIndex="1"/>
 
-                <Label text="Correo:"
-                       GridPane.rowIndex="4"
-                       GridPane.columnIndex="0"/>
+                        <Label text="Apellidos:"
+                               GridPane.rowIndex="2"
+                               GridPane.columnIndex="0"/>
 
-                <TextField fx:id="txtCorreo"
-                           promptText="Correo electrónico"
-                           GridPane.rowIndex="4"
-                           GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtApellidos"
+                                   promptText="Apellidos"
+                                   GridPane.rowIndex="2"
+                                   GridPane.columnIndex="1"/>
 
-                <Label text="Fecha de nacimiento:"
-                       GridPane.rowIndex="5"
-                       GridPane.columnIndex="0"/>
+                        <Label text="Teléfono:"
+                               GridPane.rowIndex="3"
+                               GridPane.columnIndex="0"/>
 
-                <DatePicker fx:id="dpFechaNacimiento"
-                            promptText="Selecciona una fecha"
-                            GridPane.rowIndex="5"
-                            GridPane.columnIndex="1"/>
+                        <TextField fx:id="txtTelefono"
+                                   promptText="Teléfono"
+                                   GridPane.rowIndex="3"
+                                   GridPane.columnIndex="1"/>
 
-                <HBox spacing="10"
-                      GridPane.rowIndex="6"
-                      GridPane.columnIndex="1">
+                        <Label text="Correo:"
+                               GridPane.rowIndex="4"
+                               GridPane.columnIndex="0"/>
 
-                    <Button text="Registrar huésped"
-                            onAction="#registrarHuesped"
-                            style="-fx-background-color: #243447;
-                                   -fx-text-fill: white;"/>
+                        <TextField fx:id="txtCorreo"
+                                   promptText="Correo electrónico"
+                                   GridPane.rowIndex="4"
+                                   GridPane.columnIndex="1"/>
 
-                    <Button text="Limpiar"
-                            onAction="#limpiarFormulario"/>
-                </HBox>
+                        <Label text="Fecha de nacimiento:"
+                               GridPane.rowIndex="5"
+                               GridPane.columnIndex="0"/>
 
-            </GridPane>
-        </content>
-    </TitledPane>
+                        <DatePicker fx:id="dpFechaNacimiento"
+                                    promptText="Selecciona una fecha"
+                                    GridPane.rowIndex="5"
+                                    GridPane.columnIndex="1"/>
 
-    <Label text="Huéspedes registrados"
-           style="-fx-font-size: 19px;
-                  -fx-font-weight: bold;"/>
+                        <HBox spacing="10"
+                              GridPane.rowIndex="6"
+                              GridPane.columnIndex="1">
 
-    <HBox spacing="10">
-        <TextField fx:id="txtBuscar"
-                   promptText="Documento del huésped"
-                   HBox.hgrow="ALWAYS"/>
+                            <Button text="Registrar huésped"
+                                    onAction="#registrarHuesped"
+                                    style="-fx-background-color: #243447;
+                                           -fx-text-fill: white;"/>
 
-        <Button text="Buscar"
-                onAction="#buscarHuesped"/>
+                            <Button text="Limpiar"
+                                    onAction="#limpiarFormulario"/>
 
-        <Button text="Mostrar todos"
-                onAction="#mostrarTodos"/>
-    </HBox>
+                        </HBox>
 
-    <TableView fx:id="tablaHuespedes"
-               prefHeight="250"
-               VBox.vgrow="ALWAYS">
+                    </GridPane>
+                </content>
 
-        <columns>
-            <TableColumn fx:id="colDocumento"
-                         text="Documento"
-                         prefWidth="110"/>
+            </TitledPane>
 
-            <TableColumn fx:id="colNombre"
-                         text="Nombre completo"
-                         prefWidth="180"/>
+            <!-- HUÉSPEDES REGISTRADOS -->
 
-            <TableColumn fx:id="colTelefono"
-                         text="Teléfono"
-                         prefWidth="120"/>
+            <Label text="Huéspedes registrados"
+                   style="-fx-font-size: 19px;
+                          -fx-font-weight: bold;"/>
 
-            <TableColumn fx:id="colCorreo"
-                         text="Correo"
-                         prefWidth="190"/>
+            <!-- BÚSQUEDA -->
 
-            <TableColumn fx:id="colNacimiento"
-                         text="Nacimiento"
-                         prefWidth="110"/>
-        </columns>
-    </TableView>
+            <HBox spacing="10">
 
-    <Label fx:id="lblEstado"
-           text="Lista para registrar huéspedes."
-           wrapText="true"
-           style="-fx-text-fill: #455A64;"/>
+                <TextField fx:id="txtBuscar"
+                           promptText="Documento del huésped"
+                           HBox.hgrow="ALWAYS"/>
 
-</VBox>
+                <Button text="Buscar"
+                        onAction="#buscarHuesped"/>
+
+                <Button text="Mostrar todos"
+                        onAction="#mostrarTodos"/>
+
+            </HBox>
+
+            <!-- TABLA -->
+
+            <TableView fx:id="tablaHuespedes"
+                       prefHeight="420"
+                       minHeight="420"
+                       maxHeight="420">
+
+                <columns>
+
+                    <TableColumn fx:id="colDocumento"
+                                 text="Documento"
+                                 prefWidth="110"/>
+
+                    <TableColumn fx:id="colNombre"
+                                 text="Nombre completo"
+                                 prefWidth="180"/>
+
+                    <TableColumn fx:id="colTelefono"
+                                 text="Teléfono"
+                                 prefWidth="120"/>
+
+                    <TableColumn fx:id="colCorreo"
+                                 text="Correo"
+                                 prefWidth="190"/>
+
+                    <TableColumn fx:id="colNacimiento"
+                                 text="Nacimiento"
+                                 prefWidth="110"/>
+
+                </columns>
+
+            </TableView>
+
+            <!-- MENSAJE -->
+
+            <Label fx:id="lblEstado"
+                   text="Lista para registrar huéspedes."
+                   wrapText="true"
+                   style="-fx-text-fill: #455A64;"/>
+
+        </VBox>
+
+    </content>
+
+</ScrollPane>
